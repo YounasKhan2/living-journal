@@ -1,5 +1,3 @@
-import 'server-only'
-
 import * as argon2 from 'argon2'
 
 export const PASSWORD_MIN_LENGTH = 12
