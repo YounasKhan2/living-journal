@@ -11,13 +11,14 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-7.10-2D3748?logo=prisma&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
-![BullMQ](https://img.shields.io/badge/BullMQ-Queue%20Boundary-f59e0b)
-![Phase 0](https://img.shields.io/badge/Phase%200-Complete-22c55e)
+![BullMQ](https://img.shields.io/badge/BullMQ-Scheduled%20Publishing-f59e0b)
+![Auth](https://img.shields.io/badge/Auth-Implemented-2563eb)
+![CMS](https://img.shields.io/badge/CMS-In%20Progress-f59e0b)
 ![GSAP](https://img.shields.io/badge/GSAP-Motion-88CE02)
 
 A premium editorial experience evolving into a production publishing platform for **AI, software, startups, products, careers, business and future technology**.
 
-[PRD](docs/PRD.md) · [Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md) · [ADR-001](docs/adr/ADR-001-nextjs-production-architecture.md) · [Phase 0 Record](docs/PHASE-0-MIGRATION-PLAN.md)
+[PRD](docs/PRD.md) · [Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md) · [Phase 1](docs/PHASE-1-AUTH-PLAN.md) · [Phase 2](docs/PHASE-2-CMS-PLAN.md)
 
 </div>
 
@@ -37,54 +38,88 @@ The Living Journal is deliberately **not** an autonomous news scraper. Original 
 |---|---|
 | V2.1 editorial UI baseline | ✅ Stable |
 | Phase 0 — Production foundation | ✅ Complete |
-| 0A — Freeze V2.1 | ✅ Complete |
-| 0B — Next.js App Router | ✅ Complete |
-| 0C — GSAP + SSR/client verification | ✅ Passed locally |
-| 0D — PostgreSQL + Prisma | ✅ Passed locally |
-| 0E — Redis/BullMQ boundary | ✅ Passed locally |
-| 0F — Reproducible developer verification | ✅ Passed locally |
-| 0G — Final regression QA | ✅ Passed |
-| Phase 1 — Auth/RBAC | 🟡 Current |
-| Phase 2 — Production CMS | ⬜ Planned |
+| Phase 1 — Auth/RBAC | 🟡 Implemented, final security verification pending |
+| Phase 2A — Content persistence | ✅ Implemented |
+| Phase 2B — Content application layer | ✅ Implemented |
+| Phase 2C — Authorized CMS APIs | ✅ Implemented |
+| Phase 2D — Database-backed admin workflow | ✅ Core implemented |
+| Phase 2E — Public database read path | ✅ Implemented |
+| Revisions + restore | ✅ Implemented |
+| Autosave + unsaved warning | ✅ Implemented |
+| Private editorial preview | ✅ Implemented |
+| Scheduled publishing worker | 🟡 Implemented, runtime verification pending |
+| Cloudinary media upload | 🟡 Implemented, credentials/real upload verification pending |
+| Phase 3 — Content Radar | ⬜ Planned |
 
 Detailed roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ---
 
-## 🧱 Production foundation
+## 🧱 Active production architecture
 
 ```mermaid
 flowchart TB
-  Public[Public Publication] --> Next[Next.js App Router]
-  CMS[Admin CMS - later] --> Next
-  Next --> Server[Server/Application Layer]
-  Server --> DB[(PostgreSQL + Prisma)]
-  Server --> Queue[BullMQ producer boundary]
+  Reader[Readers] --> Next[Next.js App Router]
+  Editor[Admins / Editors] --> Auth[Server Auth + RBAC]
+  Auth --> CMS[Admin CMS]
+  Next --> DB[(PostgreSQL + Prisma)]
+  CMS --> DB
+  CMS --> Media[Cloudinary Media Adapter]
+  CMS --> Queue[BullMQ scheduled-publish]
   Queue --> Redis[(Redis)]
-  Redis -. future .-> Workers[Durable workers]
-  Workers -. later phases .-> DB
+  Redis --> Worker[Scheduled Publish Worker]
+  Worker --> DB
 ```
 
-### Database ✅
+### Authentication
 
-PostgreSQL 16 + Prisma 7.10 are verified locally. The deliberately tiny `SystemSetting` model proves migration, seed and server connectivity without prematurely implementing Auth/CMS models.
+The CMS uses server-side email/password authentication with Argon2id hashing, opaque hashed database sessions, HttpOnly cookies, ADMIN/EDITOR capabilities, Redis login throttling and same-origin mutation protection.
 
-### Queue boundary ✅
+No public signup or default admin credentials exist. Create the first administrator explicitly:
 
-Redis 7 + BullMQ are verified locally. Phase 0 defines the connection/producer contracts but **does not start real workers or fake product jobs**.
+```powershell
+npm run auth:bootstrap-admin
+```
 
-| Queue | Owning future workflow |
-|---|---|
-| `content-ingestion` | Phase 3 Content Radar |
-| `scheduled-publish` | Production CMS lifecycle |
-| `newsletter-send` | Phase 6 Audience/newsletter |
-| `ai-background` | Phase 4 AI Editorial Copilot |
+### Production CMS
+
+PostgreSQL is canonical for stories. The CMS currently supports durable drafts, editing, review, scheduling, publishing, archiving, immutable revision snapshots, revision restore, autosave, protected preview and database-backed public story rendering.
+
+Import the original V2.1 sample stories once when preparing a new local database:
+
+```powershell
+npm run cms:import-seed
+```
+
+### Scheduled publishing
+
+Scheduling creates BullMQ delayed jobs. A separate continuously running worker performs due publications and periodically reconciles scheduled database rows with Redis jobs:
+
+```powershell
+npm run worker:scheduled-publish
+```
+
+Run this alongside the Next.js process in environments where scheduled publishing is enabled.
+
+### Media uploads
+
+Cloudinary is the selected Phase 2 image-storage provider. The application persists provider/storage metadata, dimensions, MIME type, alt text and attribution in `MediaAsset`.
+
+Add these **server-only** values to `.env` / deployment secrets before testing uploads:
+
+```env
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+```
+
+Never use `NEXT_PUBLIC_` prefixes for these credentials.
 
 ---
 
 ## 🔁 Quality workflow
 
-The repository provides one deterministic local verification path for humans and coding agents:
+The repository provides one deterministic local verification path:
 
 ```text
 Prisma schema validation
@@ -104,7 +139,7 @@ Run everything with:
 npm run verify
 ```
 
-The local gate is verified. GitHub-hosted Actions is intentionally not required because the repository account cannot start hosted runners without resolving a billing restriction. The committed lockfile plus `npm ci` and `npm run verify` are the canonical reproducibility checks.
+GitHub-hosted Actions is intentionally not required because the repository account cannot start hosted runners without resolving a billing restriction. The committed lockfile plus `npm ci` and `npm run verify` are the canonical reproducibility checks.
 
 ---
 
@@ -116,35 +151,41 @@ prisma/
 ├── seed.ts
 └── migrations/
 
+scripts/
+├── bootstrap-admin.ts
+├── import-seed-posts.ts
+└── scheduled-publish-worker.ts
+
 src/
 ├── app/
 │   ├── (public)/
 │   ├── admin/
-│   └── api/health/
-│       ├── route.ts
-│       ├── database/route.ts
-│       └── redis/route.ts
+│   ├── preview/[id]/
+│   └── api/
+│       ├── auth/
+│       ├── admin/
+│       │   ├── posts/
+│       │   └── media/
+│       └── health/
 ├── server/
-│   ├── env.ts
-│   ├── db/prisma.ts
-│   ├── redis/client.ts
-│   └── jobs/
-│       ├── contracts.ts
-│       └── queue.ts
+│   ├── auth/
+│   ├── content/
+│   ├── db/
+│   ├── jobs/
+│   ├── media/
+│   └── redis/
 ├── screens/
 ├── components/
 ├── styles/
 └── utils/
-    ├── format.ts
-    └── format.test.ts
 
 docs/
 ├── adr/
 ├── PRD.md
 ├── ARCHITECTURE.md
 ├── ROADMAP.md
-├── PHASE-0-MIGRATION-PLAN.md
-└── PHASE-0G-QA.md
+├── PHASE-1-AUTH-PLAN.md
+└── PHASE-2-CMS-PLAN.md
 ```
 
 ---
@@ -156,6 +197,7 @@ docs/
 - Node.js 20+ (Node.js 22 recommended)
 - npm
 - Docker Desktop **or** your own PostgreSQL + Redis instances
+- Cloudinary account only when testing real media uploads
 
 ### 1. Pull and install
 
@@ -174,9 +216,9 @@ Copy-Item .env.example .env
 
 If `.env` or `.env.local` already exists, **do not overwrite it**. Merge new variables manually.
 
-Default local infrastructure values:
+Core local infrastructure:
 
-```text
+```env
 DATABASE_URL=postgresql://living_journal:living_journal@localhost:5433/living_journal?schema=public
 REDIS_URL=redis://localhost:6380
 ```
@@ -206,26 +248,53 @@ npm run db:deploy
 npm run db:seed
 ```
 
-### 5. Verify the repository
+### 5. Bootstrap CMS access
+
+```powershell
+npm run auth:bootstrap-admin
+```
+
+Optional first-time content import:
+
+```powershell
+npm run cms:import-seed
+```
+
+### 6. Verify
 
 ```powershell
 npm run verify
 ```
 
-### 6. Run the application
+### 7. Run the application
+
+Terminal 1:
 
 ```powershell
 npm run dev
 ```
 
-Open:
+Terminal 2 when testing scheduled publishing:
+
+```powershell
+npm run worker:scheduled-publish
+```
+
+---
+
+## 🌐 Useful local routes
 
 ```text
 http://localhost:3000
+http://localhost:3000/login
+http://localhost:3000/admin
+http://localhost:3000/admin/posts
 http://localhost:3000/api/health
 http://localhost:3000/api/health/database
 http://localhost:3000/api/health/redis
 ```
+
+`/preview/:id` is authenticated and intentionally excluded from indexing.
 
 ---
 
@@ -234,51 +303,36 @@ http://localhost:3000/api/health/redis
 | Command | Purpose |
 |---|---|
 | `npm run dev` | Start Next.js development server |
-| `npm run lint` | Run ESLint/Next rules |
-| `npm run typecheck` | Generate Prisma client + TypeScript check |
-| `npm run test` | Run baseline Node/TS tests |
-| `npm run build` | Generate Prisma client + production Next build |
-| `npm run verify` | Run the full local quality gate |
-| `npm run db:validate` | Validate Prisma schema/config |
-| `npm run db:generate` | Generate typed Prisma client |
-| `npm run db:migrate` | Create/apply development migration |
+| `npm run worker:scheduled-publish` | Run durable scheduled publishing worker |
+| `npm run verify` | Full local quality gate |
+| `npm run auth:bootstrap-admin` | Securely create the first ADMIN |
+| `npm run cms:import-seed` | Import starter V2.1 stories into PostgreSQL |
 | `npm run db:deploy` | Apply committed migrations |
-| `npm run db:seed` | Seed foundation data |
 | `npm run db:studio` | Open Prisma Studio |
-
----
-
-## 🌐 Runtime health routes
-
-```text
-GET /api/health
-GET /api/health/database
-GET /api/health/redis
-```
-
-Dependency endpoints return **503** when unavailable and never expose connection strings or raw internal errors to clients.
 
 ---
 
 ## 🤖 Contributor / AI-agent rules
 
-Before substantial work, read in order:
+Before substantial work, read:
 
 1. [`docs/PRD.md`](docs/PRD.md)
-2. [`docs/adr/ADR-001-nextjs-production-architecture.md`](docs/adr/ADR-001-nextjs-production-architecture.md)
-3. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-4. [`docs/ROADMAP.md`](docs/ROADMAP.md)
-5. Phase-specific implementation plan for the current milestone
+2. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+3. [`docs/ROADMAP.md`](docs/ROADMAP.md)
+4. the active phase plan
 
 Non-negotiables:
 
-- preserve the accepted V2.1 editorial identity unless a later design change is explicitly approved;
+- preserve the accepted V2.1 editorial identity unless a design change is explicitly approved;
 - keep browser APIs in client boundaries;
-- keep database/Redis/provider credentials server-side;
+- keep database/Redis/Cloudinary/provider credentials server-side;
 - never commit `.env` or provider credentials;
-- do not enqueue jobs before their owning feature has a real worker + idempotency design;
+- treat PostgreSQL as canonical content storage;
+- require server authorization for CMS mutations;
+- keep revision history immutable;
+- do not let AI or ingestion auto-publish content;
 - run `npm run verify` before calling implementation complete;
-- update README/docs whenever setup, architecture, workflow or phase status changes;
+- update documentation whenever setup, architecture, workflow or phase status changes;
 - never call a phase complete before its verification gate passes.
 
 ---
@@ -289,6 +343,6 @@ Non-negotiables:
 
 **Minimal, not empty. Editorial, not generic. Automated where useful, human where it matters.**
 
-`V2.1 ✅ → Next.js ✅ → PostgreSQL/Prisma ✅ → Redis/BullMQ ✅ → Verify ✅ → QA ✅ → Auth 🟡`
+`Foundation ✅ → Auth 🟡 → CMS 🟡 → Radar ⬜ → AI ⬜ → SEO ⬜ → Audience ⬜ → Revenue ⬜`
 
 </div>
