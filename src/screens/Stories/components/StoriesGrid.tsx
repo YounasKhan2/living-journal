@@ -1,0 +1,1 @@
+import { ArticleCard } from '../../../components/global/ArticleCard';import type { Post } from '../../../types/content';export function StoriesGrid({posts}:{posts:Post[]}){return <div className="stories-grid">{posts.map((post,index)=><ArticleCard key={post.id} post={post} featured={index%7===0}/>)}</div>}

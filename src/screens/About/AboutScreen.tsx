@@ -1,0 +1,6 @@
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
+
+export function AboutScreen() {
+  useDocumentTitle('About')
+  return <main className="info-page page-gutter page-top"><header className="page-intro"><span className="eyebrow">About the journal</span><h1>Less noise.<br/><span className="serif">More signal.</span></h1></header><section className="info-page__grid"><div><p className="info-page__lead">The Living Journal is an independent digital publication for people who want to understand technology without drowning in the feed.</p></div><div><p>We publish concise reporting, analysis and practical field notes across artificial intelligence, software development, business, startups and careers.</p><p>The goal is simple: explain what changed, why it matters and what a thoughtful builder should do with that information.</p></div></section><section className="principles"><article><span>01</span><h2>Useful over loud</h2><p>We optimize for clarity and consequence, not outrage or empty trend-chasing.</p></article><article><span>02</span><h2>Independent thinking</h2><p>Our stories separate observation from opinion and make the reasoning visible.</p></article><article><span>03</span><h2>Built for readers</h2><p>Readable pages, restrained advertising and a strong respect for your time.</p></article></section></main>
+}

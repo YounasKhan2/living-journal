@@ -1,0 +1,2 @@
+import { NewsletterForm } from '../../../components/global/NewsletterForm'
+export function NewsletterBand(){return <section className="newsletter-band page-gutter section-space"><div className="newsletter-band__inner reveal"><span className="eyebrow">Daily briefing</span><h2>The internet moves fast.<br/><span className="serif">We’ll filter it for you.</span></h2><p>One thoughtful email with the ideas worth keeping. No noise, no endless feed.</p><NewsletterForm compact/></div></section>}
