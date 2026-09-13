@@ -4,6 +4,11 @@ import { Queue, Worker, type Job } from 'bullmq'
 import IORedis from 'ioredis'
 import { PrismaClient, Prisma } from '../src/generated/prisma/client'
 
+type ScheduledPublishPayload = {
+  postId: string
+  scheduledAt: string
+}
+
 const databaseUrl = process.env.DATABASE_URL
 const redisUrl = process.env.REDIS_URL
 
@@ -13,7 +18,7 @@ if (!redisUrl) throw new Error('REDIS_URL is required')
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) })
 const connection = new IORedis(redisUrl, { maxRetriesPerRequest: null })
 const producerConnection = new IORedis(redisUrl, { maxRetriesPerRequest: null })
-const queue = new Queue('scheduled-publish', { connection: producerConnection })
+const queue = new Queue<ScheduledPublishPayload>('scheduled-publish', { connection: producerConnection })
 
 const jobIdFor = (postId: string) => `publish-post-${postId}`
 
@@ -47,7 +52,7 @@ async function reconcileScheduledPosts() {
   }
 }
 
-async function publishScheduledPost(job: Job<{ postId: string; scheduledAt: string }>) {
+async function publishScheduledPost(job: Job<ScheduledPublishPayload>) {
   const { postId } = job.data
   const now = new Date()
 
@@ -119,7 +124,7 @@ async function publishScheduledPost(job: Job<{ postId: string; scheduledAt: stri
   return { published: true }
 }
 
-const worker = new Worker('scheduled-publish', publishScheduledPost, {
+const worker = new Worker<ScheduledPublishPayload>('scheduled-publish', publishScheduledPost, {
   connection,
   concurrency: 2,
 })
