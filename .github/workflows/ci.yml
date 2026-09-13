@@ -56,11 +56,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
-      # package-lock.json predates the Next.js/Prisma/Redis migration.
-      # Use npm install until the refreshed lockfile is committed, then switch to npm ci.
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Validate Prisma schema
         run: npm run db:validate
