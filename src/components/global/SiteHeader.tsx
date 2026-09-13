@@ -24,7 +24,17 @@ export function SiteHeader() {
   useEffect(() => setOpen(false), [pathname])
   useEffect(() => {
     document.body.classList.toggle('menu-open', open)
-    return () => document.body.classList.remove('menu-open')
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+
+    if (open) window.addEventListener('keydown', closeOnEscape)
+
+    return () => {
+      document.body.classList.remove('menu-open')
+      window.removeEventListener('keydown', closeOnEscape)
+    }
   }, [open])
 
   return <>
@@ -36,10 +46,10 @@ export function SiteHeader() {
       <div className="site-header__actions">
         <Link className="icon-link" href="/search" aria-label="Search"><MagnifyingGlass size={18}/></Link>
         <Link className="subscribe-link" href="/newsletter">Subscribe</Link>
-        <button className="menu-toggle" aria-label="Open menu" aria-expanded={open} onClick={() => setOpen(true)}><List size={22}/></button>
+        <button className="menu-toggle" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} aria-controls="mobile-navigation" onClick={() => setOpen(current => !current)}><List size={22}/></button>
       </div>
     </header>
-    <div className={`menu-overlay ${open ? 'is-open' : ''}`} aria-hidden={!open}>
+    <div id="mobile-navigation" className={`menu-overlay ${open ? 'is-open' : ''}`} aria-hidden={!open}>
       <button className="menu-overlay__close" aria-label="Close menu" onClick={() => setOpen(false)}><X size={24}/></button>
       <div className="menu-overlay__inner">
         <span className="eyebrow">Explore the journal</span>
