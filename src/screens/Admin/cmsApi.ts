@@ -14,6 +14,17 @@ export type PostRevisionSummary = {
   }
 }
 
+export type UploadedMediaAsset = {
+  id: string
+  url: string
+  altText: string
+  attribution: string | null
+  mimeType: string
+  bytes: number | null
+  width: number | null
+  height: number | null
+}
+
 type PostPayload = {
   slug: string
   title: string
@@ -23,6 +34,7 @@ type PostPayload = {
   authorName: string
   readTime: string
   coverImageUrl: string | null
+  coverMediaId: string | null
   featured: boolean
   trending: boolean
   seoTitle: string | null
@@ -41,6 +53,7 @@ function toPayload(post: Post): PostPayload {
     authorName: post.author,
     readTime: post.readTime,
     coverImageUrl: post.image || null,
+    coverMediaId: post.coverMediaId || null,
     featured: Boolean(post.featured),
     trending: Boolean(post.trending),
     seoTitle: post.seoTitle || null,
@@ -91,6 +104,20 @@ export async function updatePost(post: Post) {
 export async function deletePost(id: string) {
   const response = await fetch(`/api/admin/posts/${encodeURIComponent(id)}`, { method: 'DELETE' })
   await parseResponse<{ ok: true }>(response)
+}
+
+export async function uploadMedia(file: File, altText: string, attribution?: string) {
+  const body = new FormData()
+  body.set('file', file)
+  body.set('altText', altText)
+  if (attribution?.trim()) body.set('attribution', attribution.trim())
+
+  const response = await fetch('/api/admin/media', {
+    method: 'POST',
+    body,
+  })
+  const payload = await parseResponse<{ asset: UploadedMediaAsset }>(response)
+  return payload.asset
 }
 
 export async function listPostRevisions(id: string) {
