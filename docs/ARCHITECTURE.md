@@ -1,41 +1,53 @@
 # 🏗️ The Living Journal — Architecture
 
-> **Accepted and active application direction:** Next.js App Router + TypeScript, followed by PostgreSQL/Prisma, with Redis/BullMQ introduced for durable background workflows when required. See [`docs/adr/ADR-001-nextjs-production-architecture.md`](adr/ADR-001-nextjs-production-architecture.md).
+> **Accepted application direction:** Next.js App Router + TypeScript + PostgreSQL/Prisma, with Redis/BullMQ for durable background workflows. Authentication follows [`ADR-002`](adr/ADR-002-authentication-session-rbac.md).
 
-The V2.1 visual system remains the UI reference. Phase 0 changes runtime/infrastructure boundaries without redesigning the publication.
+The accepted V2.1 visual system remains the UI reference while production capabilities are added behind it.
 
 ## 1. Current implementation checkpoint
 
-The repository has now moved from Vite/React Router to **Next.js App Router**.
+### Phase 0 ✅ complete
 
-Implemented in the active runtime:
-- App Router public/admin route tree;
-- `next/link` / `next/navigation` replacing React Router;
-- root layout and metadata foundation;
-- initial per-story metadata from seed content;
-- explicit client boundaries for browser-dependent interaction;
-- hydration-safe localStorage demo initialization;
-- GSAP/ScrollTrigger retained inside a client component with cleanup;
-- `GET /api/health` runtime health endpoint;
-- Vite entry/config removed.
+Implemented and locally verified:
 
-Not implemented yet:
-- PostgreSQL/Prisma runtime;
-- server-side production content persistence;
-- auth/RBAC;
-- Redis/BullMQ runtime;
-- production provider integrations.
+- Next.js App Router public/admin route tree;
+- React 19 + TypeScript;
+- GSAP/ScrollTrigger client boundaries with cleanup/reduced-motion support;
+- PostgreSQL 16 + Prisma 7.10 runtime/migrations/seed;
+- Redis 7 + BullMQ producer boundary;
+- server environment validation;
+- runtime, PostgreSQL and Redis health endpoints;
+- deterministic `npm ci` + `npm run verify` developer gate;
+- final V2.1 visual/manual regression QA.
+
+### Phase 1 🟡 current
+
+Designed, not yet implemented:
+
+- Prisma `User` / `Session` auth persistence;
+- Argon2id password hashing;
+- opaque DB-backed sessions;
+- `/login` and logout;
+- protected `/admin/**` server boundary;
+- ADMIN/EDITOR RBAC/capabilities;
+- Redis login throttling;
+- same-origin mutation protection;
+- first-admin bootstrap;
+- auth audit/security tests.
+
+Detailed plan: [`PHASE-1-AUTH-PLAN.md`](PHASE-1-AUTH-PLAN.md).
 
 ## 2. Architecture principles
 
 - Human-controlled editorial publishing.
 - Clear separation between public reading, CMS, ingestion, AI and monetization.
-- Server/application layer owns authorization, publishing transitions and durable data.
+- Server/application layer owns authentication, authorization, publishing transitions and durable data.
 - Background work requiring reliability is durable/retryable.
 - External providers live behind adapters.
 - Public pages prioritize SEO, accessibility and performance.
 - Documentation changes ship with workflow/architecture changes.
 - One Next.js application boundary does **not** mean client/server concerns may be mixed.
+- UI hiding is never authorization.
 
 ## 3. Target system
 
@@ -45,7 +57,8 @@ flowchart LR
   Editor[Editors/Admins] --> CMS[Next.js Admin CMS]
 
   Web --> Server[Server/Application Layer]
-  CMS --> Server
+  CMS --> Auth[Auth/RBAC]
+  Auth --> Server
   Server --> DB[(PostgreSQL)]
   Server --> Storage[(Object Storage)]
   Server --> Redis[(Redis)]
@@ -70,20 +83,28 @@ flowchart LR
 
 ## 4. Accepted stack
 
-### Active application runtime
-- **Next.js App Router**
+### Application runtime
+- Next.js App Router
 - React 19
 - TypeScript
 - existing `tokens.css` + `global.css` + `polish.css`
 - GSAP + ScrollTrigger for client-only storytelling motion
 
-### Next production-data foundation
-- **PostgreSQL** — canonical durable datastore
-- **Prisma** — schema/migrations/typed DB access
+### Data foundation
+- PostgreSQL 16 — canonical durable datastore
+- Prisma 7.10 — schema/migrations/typed DB access
 
 ### Durable workflow foundation
-- **Redis** — cache/rate limits/job infrastructure when needed
-- **BullMQ** — required before durable ingestion, scheduled publishing and campaign jobs
+- Redis 7 — rate limits/cache/job infrastructure
+- BullMQ — durable ingestion, scheduled publishing, newsletter and AI background jobs when owning phases implement workers
+
+### Authentication foundation
+- first-party email/password for internal CMS users
+- Argon2id password hashing
+- opaque random session cookie
+- SHA-256 session-token hash stored in PostgreSQL
+- server-side ADMIN/EDITOR capability checks
+- Redis-backed login throttling
 
 ### Provider boundaries
 - S3-compatible storage / Cloudinary adapter for media
@@ -93,7 +114,7 @@ flowchart LR
 - RSS/API adapters normalize external data into internal models
 
 ### Why no NestJS service initially
-A separate NestJS API would add deployment, CORS, session/auth and DTO duplication while the publication still needs a server-rendered web runtime. If future scale/team ownership requires services, that must be documented in a new ADR.
+A separate NestJS API would add deployment, CORS, session/auth and DTO duplication while the publication needs a server-rendered web runtime. If future scale/team ownership requires services, that requires a new ADR.
 
 ## 5. Active repository shape
 
@@ -101,53 +122,79 @@ A separate NestJS API would add deployment, CORS, session/auth and DTO duplicati
 /
 ├── docs/
 │   ├── adr/
+│   │   ├── ADR-001-nextjs-production-architecture.md
+│   │   └── ADR-002-authentication-session-rbac.md
 │   ├── PRD.md
 │   ├── ARCHITECTURE.md
 │   ├── ROADMAP.md
-│   └── PHASE-0-MIGRATION-PLAN.md
+│   ├── PHASE-0-MIGRATION-PLAN.md
+│   ├── PHASE-0G-QA.md
+│   └── PHASE-1-AUTH-PLAN.md
+├── prisma/
+│   ├── schema.prisma
+│   ├── seed.ts
+│   └── migrations/
 ├── public/
 ├── src/
-│   ├── app/                    # active Next.js App Router
+│   ├── app/
 │   │   ├── (public)/
 │   │   ├── admin/
 │   │   ├── api/health/
 │   │   ├── layout.tsx
 │   │   └── not-found.tsx
+│   ├── server/
+│   │   ├── db/
+│   │   ├── redis/
+│   │   └── jobs/
 │   ├── components/
-│   ├── screens/                # V2.1 UI retained/reused
+│   ├── screens/
 │   ├── content/
-│   ├── context/                # temporary local demo content state
+│   ├── context/          # temporary local demo content state until Phase 2
 │   ├── hooks/
 │   ├── styles/
 │   ├── types/
 │   └── utils/
+├── compose.yaml
 ├── next.config.ts
 ├── tsconfig.json
 ├── .env.example
 └── README.md
 ```
 
-Later Phase 0/production work may introduce `prisma/`, `src/server/`, `src/features/` or worker modules only when real boundaries need them. Do not reorganize working UI merely for aesthetics.
+Phase 1 may add `src/server/auth/` and auth route/UI modules without reorganizing unrelated working UI.
 
 ## 6. Server/client boundary
 
-Prefer server-rendered routes/components for public content and metadata as canonical data moves server-side. Use client components only for behavior that genuinely needs the browser, including:
+Prefer server-rendered routes/components for canonical public data and authentication decisions. Use client components only for behavior that genuinely needs the browser.
+
+Browser-only examples:
 
 - GSAP/ScrollTrigger;
-- mobile menu state;
+- mobile-menu state;
 - temporary interactive archive/search filtering;
 - temporary V2.1 localStorage demo flows;
 - form interaction/admin demo state.
 
-Current migration rules:
-- browser storage is loaded only after mount so the initial server/client render remains deterministic;
+Server-only examples:
+
+- Prisma/database access;
+- Redis access;
+- password hashing;
+- session token creation/lookup/revocation;
+- authorization guards;
+- provider credentials;
+- publishing state transitions.
+
+Rules:
+
+- browser storage loads only after mount where still temporarily used;
 - `window`, `document`, `localStorage`, `matchMedia` and GSAP may not execute in server-evaluated code;
-- database/provider/secrets code will be explicitly server-side;
-- UI-only hiding is never authorization.
+- secrets/auth internals may not enter client bundles;
+- client role checks may improve UX but cannot grant access.
 
 ## 7. Routing & metadata
 
-The active App Router maps:
+Current route foundation:
 
 ```text
 /
@@ -167,7 +214,11 @@ The active App Router maps:
 /admin/audience
 /admin/settings
 /api/health
+/api/health/database
+/api/health/redis
 ```
+
+Phase 1 adds a public `/login` route and server auth endpoints/actions as needed.
 
 Root metadata is provided through `src/app/layout.tsx`. Story routes currently generate seed-backed metadata as a migration scaffold. Production canonical SEO sourced from the database remains Phase 5.
 
@@ -187,26 +238,6 @@ stateDiagram-v2
 ```
 
 Server-side application services will own transitions. The CMS requests transitions; it does not authorize itself.
-
-### Planned write path
-
-```mermaid
-sequenceDiagram
-  participant E as Editor
-  participant C as CMS
-  participant A as Server Application
-  participant D as PostgreSQL
-  participant Q as Queue
-  E->>C: Save draft
-  C->>A: validated mutation
-  A->>D: post + revision
-  D-->>A: saved version
-  A-->>C: canonical post
-  E->>C: Schedule
-  C->>A: schedule request
-  A->>D: SCHEDULED + publishAt
-  A->>Q: durable publish job
-```
 
 ## 9. Content Radar boundary
 
@@ -252,21 +283,58 @@ AI remains server-mediated and cannot directly publish.
 
 ## 11. Authentication & authorization — Phase 1
 
-Initial roles:
+Architecture source of truth: [`ADR-002`](adr/ADR-002-authentication-session-rbac.md) and [`PHASE-1-AUTH-PLAN.md`](PHASE-1-AUTH-PLAN.md).
+
+### Roles
 
 | Capability | ADMIN | EDITOR |
 |---|---:|---:|
-| Read CMS | ✅ | ✅ |
+| Enter/read CMS | ✅ | ✅ |
 | Create/edit drafts | ✅ | ✅ |
 | Review/publish | ✅ | ✅ |
-| Manage sources | ✅ | Optional |
+| Audience read | ✅ | ✅ initially |
+| Manage sources | ✅ | future decision |
+| Manage publication settings | ✅ | ❌ |
 | Manage monetization | ✅ | ❌ |
-| Manage users/settings | ✅ | ❌ |
+| Manage users/roles | ✅ | ❌ |
 
-All protected mutation authorization will be server-side.
+### Session boundary
+
+```mermaid
+sequenceDiagram
+  participant B as Browser
+  participant A as Next.js Server
+  participant R as Redis
+  participant D as PostgreSQL
+
+  B->>A: POST login credentials
+  A->>R: rate-limit checks
+  A->>D: load ACTIVE user
+  A->>A: Argon2id verify
+  A->>D: persist hash(random session token)
+  A-->>B: HttpOnly session cookie
+  B->>A: GET /admin
+  A->>D: validate session + user status
+  A-->>B: render CMS or redirect /login
+```
+
+Session tokens are random opaque values; raw tokens are never persisted in PostgreSQL.
+
+### Authorization rules
+
+- `/admin/**` requires a valid authenticated session at the server layout boundary;
+- server mutations additionally require appropriate capabilities;
+- `/admin/settings` is ADMIN-only in Phase 1;
+- disabled/expired/revoked sessions fail closed;
+- return paths are validated local paths only;
+- state-changing cookie-authenticated requests validate same-origin intent;
+- login throttling is Redis-backed.
 
 ## 12. Data boundaries
 
+- **User** — internal authenticated CMS identity
+- **Session** — revocable opaque login session
+- **AuditLog** — security/editorial event trail as owning phases implement events
 - **Post** — first-party publication content
 - **SourceItem** — third-party discovery/research metadata
 - **PostSource** — attribution relationship
@@ -281,7 +349,7 @@ Production media will use authorized persistent object storage, recording MIME t
 
 ## 14. SEO
 
-Next.js is now the rendering foundation for canonical metadata, article structured data, sitemaps, RSS and redirects. Phase 0 establishes capability; Phase 5 connects those outputs to canonical database content and search-distribution policy.
+Next.js is the rendering foundation for canonical metadata, article structured data, sitemaps, RSS and redirects. Phase 5 connects those outputs to canonical database content and search-distribution policy.
 
 ## 15. Jobs & reliability
 
@@ -291,23 +359,27 @@ Durable jobs are required for source ingestion, scheduled publishing, newsletter
 
 - secrets only in environment/secret manager;
 - server-side input validation;
-- secure sessions when auth arrives;
-- CSRF protection where applicable;
-- rate limiting for sensitive/expensive endpoints;
+- Argon2id password hashing;
+- opaque HttpOnly sessions with database revocation;
+- CSRF/same-origin protection for cookie-authenticated mutations;
+- Redis rate limiting for auth and later sensitive/expensive endpoints;
 - sanitized rich content;
 - upload validation;
 - least-privilege credentials;
-- audit important admin actions;
-- never commit real `.env` secrets.
+- audit important admin/security actions;
+- never commit real `.env` secrets;
+- never log passwords, raw cookies or raw session tokens.
 
 ## 17. Observability
 
-Eventually capture application errors, ingestion/job failures, publishing failures, email failures, AI usage/failures and public performance metrics.
+Eventually capture application errors, auth/security events, ingestion/job failures, publishing failures, email failures, AI usage/failures and public performance metrics without leaking secrets or unnecessary PII.
 
-## 18. Phase 0 source of truth
+## 18. Current source of truth
 
-Follow [`PHASE-0-MIGRATION-PLAN.md`](PHASE-0-MIGRATION-PLAN.md). The immediate gate is local verification of the Next.js migration/client boundaries, followed by PostgreSQL/Prisma foundation work.
+Phase 0 records remain in [`PHASE-0-MIGRATION-PLAN.md`](PHASE-0-MIGRATION-PLAN.md) and [`PHASE-0G-QA.md`](PHASE-0G-QA.md).
+
+Current implementation gate: [`PHASE-1-AUTH-PLAN.md`](PHASE-1-AUTH-PLAN.md).
 
 ## 19. Documentation rule
 
-Update documentation in the same change when setup, routes, workflows, architecture, product scope or phase status change. This applies equally to human contributors and AI coding agents.
+Update documentation in the same change when setup, routes, workflows, architecture, security boundaries, environment variables or phase status change. This applies equally to human contributors and AI coding agents.
