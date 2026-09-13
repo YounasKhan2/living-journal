@@ -46,6 +46,30 @@ export const transitionInputSchema = z.object({
   scheduledAt: z.string().datetime().optional(),
 })
 
+export const postRevisionSnapshotSchema = z.object({
+  slug: z.string().min(1).max(180),
+  title: z.string().min(1).max(300),
+  dek: z.string().min(1).max(1000),
+  body: z.array(articleSectionSchema).max(300),
+  authorName: z.string().min(1).max(160),
+  readTime: z.string().min(1).max(80),
+  status: postStatusSchema,
+  category: z.object({
+    slug: z.string().min(1).max(120),
+    name: z.string().min(1).max(120),
+  }),
+  coverImageUrl: z.string().url().max(2048).nullable(),
+  coverMediaId: z.string().nullable(),
+  featured: z.boolean(),
+  trending: z.boolean(),
+  seoTitle: z.string().max(300).nullable(),
+  metaDescription: z.string().max(500).nullable(),
+  scheduledAt: z.string().datetime().nullable(),
+  publishedAt: z.string().datetime().nullable(),
+  tags: z.array(z.string().min(1).max(80)).max(20),
+})
+
 export type PostInput = z.infer<typeof postInputSchema>
 export type PostPatch = z.infer<typeof postPatchSchema>
 export type PostStatusValue = z.infer<typeof postStatusSchema>
+export type PostRevisionSnapshot = z.infer<typeof postRevisionSnapshotSchema>
