@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { Archive, ArrowCounterClockwise, Clock, FloppyDisk, PaperPlaneRight } from 'phosphor-react'
+import Link from 'next/link'
+import { Archive, ArrowCounterClockwise, Clock, Eye, FloppyDisk, PaperPlaneRight } from 'phosphor-react'
 import type { ArticleSection, Post, PostStatus } from '../../../types/content'
 import { slugify } from '../../../utils/format'
 import { categories } from '../../../content/categories'
@@ -135,6 +136,7 @@ export function PostEditor({ initialPost, onSave, onTransition }: PostEditorProp
         <h2>Workflow</h2>
         <div className="editor-status"><span>Status</span><strong>{statusLabel[draft.status]}</strong></div>
         {!isPersisted ? <p className="editor-help">Save this draft once to unlock review and publishing actions.</p> : null}
+        {isPersisted ? <Link className="editor-preview-link" href={`/preview/${draft.id}`} target="_blank"><Eye size={16}/>Preview saved version</Link> : null}
         {draft.status === 'in_review' && isPersisted ? <label>Schedule time<input type="datetime-local" value={scheduledAt} onChange={event => setScheduledAt(event.target.value)}/></label> : null}
         <label>Read time<input value={draft.readTime} onChange={event => update('readTime', event.target.value)}/></label>
         <div className="editor-checks"><label><input type="checkbox" checked={Boolean(draft.featured)} onChange={event => update('featured', event.target.checked)}/> Featured story</label><label><input type="checkbox" checked={Boolean(draft.trending)} onChange={event => update('trending', event.target.checked)}/> Trending</label></div>
