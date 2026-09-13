@@ -1,25 +1,39 @@
 {
   "name": "living-journal",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "db:validate": "prisma validate",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
     "gsap": "^3.13.0",
     "next": "^16.0.0",
+    "pg": "^8.16.3",
     "phosphor-react": "^1.4.1",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "zod": "^4.6.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "@types/pg": "^8.15.5",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
+    "dotenv": "^17.2.2",
+    "prisma": "7.10.0",
     "typescript": "^5.9.2"
   },
   "description": "Human-led, AI-assisted editorial technology publication"
