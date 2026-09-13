@@ -1,232 +1,166 @@
 # 🗺️ The Living Journal — Production Roadmap
 
-> **Rule:** Complete and verify one phase before expanding the next. Avoid large cross-phase implementation prompts that make regressions hard to audit.
+> **Rule:** Complete and verify one phase before expanding the next. A UI existing does not mean a production phase is done.
 
 ## Current baseline
 
-### ✅ V2.1 — Stable reusable editorial frontend
+### ✅ V2.1 — Stable editorial visual baseline
 
-Available today:
-- Multi-page React/Vite/TypeScript application.
-- Reusable public/admin screen architecture.
-- Premium editorial visual system and GSAP motion.
-- Story/category/search/detail UI.
-- Local demo CMS using `localStorage`.
-- Newsletter demo capture.
-- Recovered responsive/internal-page styling.
+The accepted V2.1 experience is preserved during Phase 0: reusable screens/components, premium editorial styling, GSAP motion, public/internal routes and local demo publishing behavior.
 
-Known limitation: V2.1 is a frontend/local publishing demo, **not a production CMS**.
+### 🟡 Active runtime migration
+
+Next.js App Router is now the active project runtime in `main`. The framework migration is implemented; local build/hydration/visual verification is the immediate gate before database work begins.
 
 ---
 
 ## Phase 0 — Next.js migration & production foundation
 **Status:** 🟡 IN PROGRESS
 
-### Decision completed
-- ✅ ADR-001 accepted: migrate to **Next.js App Router**.
-- ✅ PostgreSQL + Prisma selected as canonical data foundation.
-- ✅ Redis/BullMQ retained for durable jobs when needed.
-- ✅ V2.1 UI frozen as the migration visual baseline.
-- ✅ Detailed execution plan added in [`PHASE-0-MIGRATION-PLAN.md`](PHASE-0-MIGRATION-PLAN.md).
+### Architecture decisions ✅
+- ADR-001: **Next.js App Router** accepted.
+- PostgreSQL + Prisma selected as the canonical data foundation.
+- Redis/BullMQ retained for durable jobs when required.
+- No separate NestJS service in the initial production architecture.
 
-### Remaining deliverables
-- ⬜ Migrate active runtime/routes from Vite/React Router to Next.js App Router.
-- ⬜ Stabilize GSAP/browser-only client boundaries under SSR.
-- ⬜ Add PostgreSQL/Prisma migration foundation.
-- ⬜ Add environment validation and `.env.example`.
-- ⬜ Add CI checks for lint/typecheck/test/build.
-- ⬜ Document reproducible local setup.
-- ⬜ Complete visual/manual regression audit.
+### Execution status
 
-### Exit criteria
-- Fresh clone can be configured from README.
-- All V2.1 routes have working Next.js equivalents.
-- V2.1 visual/motion behavior is preserved.
-- No hydration/runtime errors.
-- Database migration succeeds locally.
-- CI/build/typecheck/lint/test baseline is green.
-- No Phase 1+ feature is accidentally claimed as complete.
+- ✅ **0A — V2.1 baseline frozen.**
+- ✅ **0B — Next.js App Router migration implemented.** Public/admin route equivalents, Next navigation, root metadata/layout, `/api/health`, and Vite cleanup are in `main`.
+- 🟡 **0C — GSAP/browser/SSR stabilization.** Client boundaries and hydration-safe local demo storage are implemented; local console/build/visual verification remains.
+- ⬜ **0D — PostgreSQL + Prisma + environment validation.**
+- ⬜ **0E — Redis/queue boundary.**
+- ⬜ **0F — CI + reproducible developer setup.**
+- ⬜ **0G — Full visual/manual regression audit.**
+
+Detailed gates: [`PHASE-0-MIGRATION-PLAN.md`](PHASE-0-MIGRATION-PLAN.md).
+
+### Phase 0 exit criteria
+- fresh clone can be configured from README;
+- `npm run typecheck` and `npm run build` pass;
+- all V2.1 routes work directly and through navigation;
+- V2.1 visual/motion behavior is preserved;
+- no hydration/runtime warnings from browser-only code;
+- PostgreSQL migration succeeds locally;
+- lint/test/build/typecheck CI baseline is green;
+- documentation describes the implemented system;
+- no Phase 1+ feature is incorrectly claimed as complete.
 
 ---
 
 ## Phase 1 — Authentication & RBAC
 **Status:** ⬜ Planned
 
-### Deliverables
-- Secure admin login/logout/session.
-- `ADMIN` and `EDITOR` roles.
-- Server-side authorization guards.
-- Bootstrap-first-admin procedure.
-- Protected admin routes.
-- Rate limiting/security baseline for auth.
+- secure admin login/logout/session;
+- `ADMIN` and `EDITOR` roles;
+- server-side authorization guards;
+- bootstrap-first-admin workflow;
+- protected admin routes;
+- auth rate limiting/security baseline.
 
-### Exit criteria
-- Anonymous users cannot access protected admin data/mutations.
-- Editor/admin capability tests pass.
-- Role enforcement is server-side.
+**Exit:** anonymous access to protected data/mutations is blocked and role tests pass.
 
 ---
 
 ## Phase 2 — Production CMS & media
 **Status:** ⬜ Planned
 
-### Deliverables
-- Post/category/tag/author persistence.
-- Draft → review → scheduled → published → archived lifecycle.
-- Rich/block editor.
-- Autosave.
-- Preview.
-- Revisions/audit metadata.
-- Media upload/storage + alt/attribution metadata.
-- Migrate public site from local seed/context to canonical database content.
+- persistent posts/categories/tags/authors;
+- Draft → Review → Scheduled → Published → Archived lifecycle;
+- production structured editor;
+- autosave/preview/revisions;
+- media storage + metadata;
+- public pages read canonical database content rather than local demo state.
 
-### Exit criteria
-- Editor can create, edit, preview, schedule and publish a story end-to-end.
-- Published content survives devices/restarts/deploys.
-- Public pages read canonical production content.
+**Exit:** an editor can create, review, schedule and publish durable content end-to-end.
 
 ---
 
 ## Phase 3 — Content Radar & ingestion
 **Status:** ⬜ Planned
 
-### Deliverables
-- Source registry.
-- RSS/Atom adapter first.
-- Scheduled ingestion worker.
-- Normalization/deduplication.
-- Radar inbox with filters.
-- Save/dismiss/archive.
-- Convert lead → draft with source attribution.
-- Source-health metrics.
+- source registry;
+- RSS/Atom first;
+- scheduled ingestion;
+- normalization/deduplication;
+- Radar inbox/filter/save/dismiss/archive;
+- source attribution and lead → draft conversion;
+- source health metrics.
 
-### Exit criteria
-- At least one real external source ingests reliably.
-- Duplicate leads are controlled.
-- No ingested lead can become public without explicit editorial action.
+**Exit:** at least one real source ingests reliably and nothing auto-publishes.
 
 ---
 
 ## Phase 4 — AI Editorial Copilot
 **Status:** ⬜ Planned
 
-### Deliverables
-- Research brief.
-- Headline/outline assistance.
-- Section/draft assistance.
-- SEO metadata suggestions.
-- Tags/FAQ/social/newsletter summaries.
-- Generation metadata/usage logging.
-- Explicit source context selection.
+- research brief;
+- headlines/outlines;
+- section/draft assistance;
+- SEO/tag/FAQ/social/newsletter suggestions;
+- generation/usage metadata;
+- explicit source context.
 
-### Exit criteria
-- AI output always lands in editable editorial state.
-- AI has no direct production-publish permission.
-- Provider failures do not lose editor content.
+**Exit:** AI output remains editable, attributable where needed and never directly publishes.
 
 ---
 
 ## Phase 5 — SEO & distribution
 **Status:** ⬜ Planned
 
-### Deliverables
-- Dynamic canonical metadata.
-- Article/Breadcrumb/Organization structured data as applicable.
-- Dynamic sitemap.
-- RSS/Atom.
-- News sitemap when justified.
-- Social cards.
-- Slug redirects.
-- Search Console-ready deployment.
+- canonical metadata;
+- Article/Breadcrumb/Organization structured data;
+- dynamic sitemap/RSS;
+- News sitemap when justified;
+- social cards;
+- redirects;
+- Search Console readiness.
 
-### Exit criteria
-- Published articles render crawlable metadata/HTML.
-- Sitemap/feed reflect canonical published content automatically.
-- Draft/private content is not indexed.
+**Exit:** canonical published content is crawlable and private/draft content is not indexed.
 
 ---
 
 ## Phase 6 — Audience & newsletter
 **Status:** ⬜ Planned
 
-### Deliverables
-- Persistent subscribers and consent state.
-- Unsubscribe flow.
-- Email provider adapter.
-- Campaign composer/preview.
-- Story selection + optional AI summaries.
-- Send/schedule workflow.
-- Delivery/open/click metrics where provider supports them.
-
-### Exit criteria
-- Subscribe/unsubscribe is production-safe.
-- Campaigns cannot accidentally double-send on job retry.
-- Subscriber PII remains server-side/protected.
+- persistent consent-aware subscribers;
+- unsubscribe;
+- email provider adapter;
+- campaign composition/preview/scheduling;
+- metrics where available;
+- retry-safe sends.
 
 ---
 
 ## Phase 7 — Monetization
 **Status:** ⬜ Planned
 
-### Deliverables
-- Monetization feature flags.
-- Reusable ad placements.
-- Affiliate program/link registry + click events.
-- Sponsor/campaign records.
-- Sponsored-story disclosures.
-- Advertise/media-kit data.
-- Revenue dashboard adapters.
-
-### Exit criteria
-- Monetization can be enabled/disabled without redesigning articles.
-- Affiliate/sponsored content has required disclosure surfaces.
-- Revenue/event reporting has traceable source data.
+- monetization feature flags;
+- ad placements;
+- affiliate registry/events;
+- sponsor/campaign records;
+- disclosure surfaces;
+- media-kit/revenue adapters.
 
 ---
 
 ## Phase 8 — Analytics, hardening & launch
 **Status:** ⬜ Planned
 
-### Deliverables
-- Editorial/public analytics dashboards.
-- Error/queue/ingestion monitoring.
-- Performance optimization and Core Web Vitals pass.
-- Accessibility audit.
-- Security review.
-- Backup/restore documentation.
-- Deployment/rollback runbook.
-- Production legal/content checklist.
-
-### Exit criteria
-- Critical workflows have automated tests.
-- Operational failures are observable.
-- Deployment and rollback are documented and rehearsable.
-- Production launch checklist is signed off.
+- editorial/public analytics;
+- error/queue/ingestion monitoring;
+- Core Web Vitals optimization;
+- accessibility/security audits;
+- backups/restore;
+- deployment/rollback runbook;
+- production launch checklist.
 
 ---
 
-## Later opportunities — after evidence of audience/revenue
+## Later opportunities
 
-- Digital products/store.
-- Paid memberships.
-- Reader accounts/bookmarks.
-- Personalized briefings.
-- Multiple publications/tenancy.
-- Mobile apps.
-- Advanced recommendation engine.
-- Sponsor self-service portal.
-
-These are deliberately outside the initial production roadmap.
+Digital products, memberships, reader accounts/bookmarks, personalized briefings, multi-publication support, native apps, advanced recommendations and sponsor self-service remain outside the initial roadmap.
 
 ## Definition of done for every phase
 
-A phase is not complete because the UI exists. It is complete when:
-
-1. Required behavior works end-to-end.
-2. Security/authorization is enforced where relevant.
-3. Error/empty/loading states exist.
-4. Typecheck/build/tests pass.
-5. No secrets are committed.
-6. Root `README.md` reflects new setup/workflows/status.
-7. `PRD.md`, `ARCHITECTURE.md`, or this roadmap are updated if implementation changed assumptions.
-8. A concise commit/PR summary records what changed, verification performed and known limitations.
+A phase requires working end-to-end behavior, relevant security, edge states, verification/tests, no committed secrets, updated README/docs, and a clear record of remaining limitations.
