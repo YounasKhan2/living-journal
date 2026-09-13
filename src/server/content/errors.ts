@@ -3,6 +3,7 @@ export function contentErrorResponse(error: unknown) {
 
   if (message === 'POST_NOT_FOUND') return { status: 404, error: 'Post not found.' }
   if (message === 'REVISION_NOT_FOUND') return { status: 404, error: 'Revision not found.' }
+  if (message === 'MEDIA_NOT_FOUND') return { status: 404, error: 'Selected media asset no longer exists.' }
   if (message === 'INVALID_REVISION_SNAPSHOT') return { status: 409, error: 'This revision cannot be restored safely.' }
   if (message === 'POST_SLUG_TAKEN') return { status: 409, error: 'That slug is already in use.' }
   if (message === 'ONLY_DRAFTS_CAN_BE_DELETED') return { status: 409, error: 'Only draft posts can be deleted.' }
