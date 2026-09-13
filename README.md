@@ -6,24 +6,24 @@
 
 **Discover → Research → Edit → Publish → Distribute → Monetize**
 
+![Next.js](https://img.shields.io/badge/Next.js-App%20Router-black?logo=next.js)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
 ![GSAP](https://img.shields.io/badge/GSAP-Motion-88CE02)
 ![UI](https://img.shields.io/badge/V2.1-Stable-2ea44f)
 ![Phase](https://img.shields.io/badge/Phase%200-In%20Progress-f59e0b)
-![Architecture](https://img.shields.io/badge/Target-Next.js-black?logo=next.js)
 
-A reusable Awwwards-inspired editorial frontend evolving into a production publishing platform for **AI, software, startups, products, careers, business and future technology**.
+A premium editorial frontend evolving into a production platform for **AI, software, startups, products, careers, business and future technology**.
 
-[Product Requirements](docs/PRD.md) · [Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md) · [ADR-001](docs/adr/ADR-001-nextjs-production-architecture.md) · [Phase 0 Plan](docs/PHASE-0-MIGRATION-PLAN.md)
+[PRD](docs/PRD.md) · [Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md) · [ADR-001](docs/adr/ADR-001-nextjs-production-architecture.md) · [Phase 0 Plan](docs/PHASE-0-MIGRATION-PLAN.md)
 
 </div>
 
 ---
 
-## ✨ Product idea
+## ✨ Product principle
 
-The Living Journal is not an automated news scraper. It combines original publishing with a future **Content Radar** for RSS/approved APIs and an **AI Editorial Copilot** for research and drafting.
+The Living Journal is not an automated news scraper.
 
 > **APIs discover. AI assists. Humans decide. The Journal publishes.**
 
@@ -31,7 +31,7 @@ The Living Journal is not an automated news scraper. It combines original publis
 flowchart LR
   Sources[RSS / Approved APIs] --> Radar[Content Radar]
   Manual[Original Story] --> Draft[Editorial Draft]
-  Radar --> Research[Research Workspace]
+  Radar --> Research[Research]
   Research --> AI[AI Assistance]
   AI --> Draft
   Draft --> Review[Human Review]
@@ -45,66 +45,210 @@ flowchart LR
 
 ## 🚦 Current status
 
-| Phase | Scope | Status |
-|---|---|---|
-| V2 | Reusable editorial frontend + GSAP visual system | ✅ Complete |
-| V2.1 | UI recovery, responsive/internal-page polish | ✅ Stable baseline |
-| Phase 0 | **Next.js migration + production foundation** | 🟡 In progress |
-| Phase 1 | Authentication + RBAC | ⬜ Planned |
-| Phase 2 | Production CMS + media | ⬜ Planned |
-| Phase 3 | Content Radar + RSS/API ingestion | ⬜ Planned |
-| Phase 4 | AI Editorial Copilot | ⬜ Planned |
-| Phase 5 | SEO + sitemap + RSS/distribution | ⬜ Planned |
-| Phase 6 | Audience + newsletter | ⬜ Planned |
-| Phase 7 | Monetization | ⬜ Planned |
-| Phase 8 | Analytics + hardening + launch | ⬜ Planned |
+| Milestone | Status |
+|---|---|
+| V2.1 editorial UI baseline | ✅ Stable |
+| Phase 0A — freeze V2.1 | ✅ Complete |
+| Phase 0B — Next.js App Router migration | ✅ Implemented |
+| Phase 0C — GSAP + SSR/client verification | 🟡 Current gate |
+| Phase 0D — PostgreSQL + Prisma | ⬜ Next |
+| Phase 0E — Redis/queue boundary | ⬜ Planned |
+| Phase 0F — CI + reproducible setup | ⬜ Planned |
+| Phase 0G — full visual QA | ⬜ Planned |
+| Phase 1 — Auth/RBAC | ⬜ Planned |
+| Phase 2 — Production CMS | ⬜ Planned |
+| Phase 3 — Content Radar | ⬜ Planned |
+| Phase 4 — AI Editorial Copilot | ⬜ Planned |
+| Phase 5–8 — SEO, audience, revenue, launch | ⬜ Planned |
 
-### ✅ Phase 0 architecture decision is locked
-
-We accepted [`ADR-001`](docs/adr/ADR-001-nextjs-production-architecture.md):
-
-```text
-Next.js App Router
-      ↓
-React + TypeScript
-      ↓
-Server/Application Modules
-      ↓
-PostgreSQL + Prisma
-      ↓
-Redis + BullMQ when durable jobs arrive
-```
-
-We are **not** adding a separate NestJS service in the initial production architecture. If future scale/team boundaries justify service extraction, that requires a new ADR.
-
-The exact migration order and gates live in [`docs/PHASE-0-MIGRATION-PLAN.md`](docs/PHASE-0-MIGRATION-PLAN.md).
+The detailed gates live in [`docs/PHASE-0-MIGRATION-PLAN.md`](docs/PHASE-0-MIGRATION-PLAN.md).
 
 ---
 
-## 🎨 V2.1 — visual baseline
+## 🚀 Phase 0B — Next.js migration
 
-V2.1 is now the frontend reference that Phase 0 must preserve.
+The repository now uses **Next.js App Router as the active runtime**. This was deliberately a framework/runtime migration rather than a visual redesign.
 
-- ✅ Layered editorial landing page.
-- ✅ Responsive header + mobile navigation.
-- ✅ GSAP hero parallax, ticker and reveal motion.
-- ✅ Stories, Categories, Story Detail and Search.
-- ✅ Newsletter, About, Contact, Advertise, Legal and 404.
-- ✅ Admin dashboard/posts/editor/audience/settings demo UI.
-- ✅ Mobile/narrow layouts.
-- ✅ Safe demo `localStorage` behavior.
-- ✅ `prefers-reduced-motion` support.
+### What changed
 
-### Styling baseline
+- ✅ Vite runtime replaced by Next.js App Router.
+- ✅ React Router removed from the active app.
+- ✅ Existing `screens/`, reusable components and V2.1 styles retained.
+- ✅ Public and admin routes mapped into `src/app`.
+- ✅ `next/link` and `next/navigation` used for navigation/params.
+- ✅ Root metadata foundation added.
+- ✅ Initial story metadata added from seed content.
+- ✅ `/api/health` added.
+- ✅ Browser-dependent modules given explicit client boundaries.
+- ✅ `localStorage` demo state made hydration-safe.
+- ✅ Stabilized V2.1 GSAP behavior retained.
+- ✅ Obsolete Vite entry/config files removed.
+
+### What did **not** change yet
+
+- Admin routes are still demo-only and unauthenticated.
+- Content/subscribers still use local demo state.
+- PostgreSQL/Prisma are not connected yet.
+- Content Radar, AI, newsletter delivery and monetization remain later phases.
+
+---
+
+## 🎨 V2.1 visual baseline
+
+Phase 0 must preserve the accepted UI:
+
+- layered editorial homepage;
+- GSAP hero parallax, ticker and reveal choreography;
+- Stories, Category, Story Detail and Search;
+- Newsletter, About, Contact, Advertise, Legal and 404;
+- Admin dashboard/posts/editor/audience/settings demo;
+- responsive/mobile layouts;
+- reduced-motion behavior.
+
+Styles remain intentionally layered:
 
 ```text
 src/styles/
 ├── tokens.css      # design tokens
-├── global.css      # structural/base rules
-└── polish.css      # V2.1 detailed route/responsive styling
+├── global.css      # structural/base styling
+└── polish.css      # detailed V2.1 route/responsive treatment
 ```
 
-**Phase 0 rule:** do not redesign these surfaces while migrating the runtime. Any visual change must be a compatibility fix or separately approved improvement.
+Do not consolidate or redesign these during infrastructure work without visual regression checks.
+
+---
+
+## 🗂️ Active structure
+
+```text
+src/
+├── app/
+│   ├── layout.tsx
+│   ├── not-found.tsx
+│   ├── (public)/
+│   │   ├── page.tsx
+│   │   ├── stories/
+│   │   ├── category/
+│   │   ├── search/
+│   │   ├── newsletter/
+│   │   ├── about/
+│   │   ├── contact/
+│   │   ├── advertise/
+│   │   └── legal/
+│   ├── admin/
+│   └── api/health/route.ts
+├── components/
+├── content/
+├── context/            # temporary demo persistence
+├── hooks/
+├── screens/            # retained V2.1 screen architecture
+├── styles/
+├── types/
+└── utils/
+
+docs/
+├── adr/
+├── PRD.md
+├── ARCHITECTURE.md
+├── ROADMAP.md
+└── PHASE-0-MIGRATION-PLAN.md
+```
+
+---
+
+## 🌐 Routes
+
+### Public
+
+| Route | Purpose |
+|---|---|
+| `/` | Editorial home |
+| `/stories` | Story archive |
+| `/stories/[slug]` | Story detail |
+| `/category/[slug]` | Category archive |
+| `/search` | Search |
+| `/newsletter` | Newsletter |
+| `/about` | About |
+| `/contact` | Contact |
+| `/advertise` | Sponsorship/advertising |
+| `/legal/[page]` | Privacy, terms, affiliate disclosure |
+
+### Publisher demo
+
+| Route | Purpose |
+|---|---|
+| `/admin` | Dashboard |
+| `/admin/posts` | Manage stories |
+| `/admin/posts/new` | New story |
+| `/admin/posts/[id]/edit` | Edit story |
+| `/admin/audience` | Demo subscribers |
+| `/admin/settings` | Settings/demo reset |
+
+### Runtime health
+
+```text
+GET /api/health
+```
+
+Expected shape:
+
+```json
+{
+  "status": "ok",
+  "service": "living-journal",
+  "runtime": "nextjs"
+}
+```
+
+---
+
+## 🛠️ Run locally
+
+Requirements: **Node.js 20+** and npm.
+
+```bash
+git pull origin main
+npm install
+```
+
+Create local environment config:
+
+```bash
+cp .env.example .env.local
+```
+
+On Windows PowerShell you can use:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+Start development:
+
+```bash
+npm run dev
+```
+
+Then open:
+
+```text
+http://localhost:3000
+http://localhost:3000/api/health
+```
+
+### Verification gate
+
+Before Phase 0D begins, run:
+
+```bash
+npm run typecheck
+npm run build
+npm run start
+```
+
+Then manually check Home, Stories, Story Detail, Search, About and Admin while watching the browser console for hydration/runtime errors.
+
+> The migration was structurally implemented and pushed, but the assistant execution environment cannot download npm packages, so a full `next build` could not be run there. Local verification is therefore an explicit Phase 0C gate rather than being falsely reported as passed.
 
 ---
 
@@ -115,184 +259,63 @@ flowchart TB
   Public[Public Publication] --> Next[Next.js App Router]
   CMS[Admin CMS] --> Next
   Next --> Server[Server/Application Layer]
-  Server --> DB[(PostgreSQL)]
+  Server --> DB[(PostgreSQL + Prisma)]
   Server --> Storage[(Object Storage)]
-  Server --> Redis[(Redis)]
-  Sources[RSS / Approved APIs] --> Workers[Background Workers]
+  Server --> Redis[(Redis / BullMQ when needed)]
+  Sources[RSS / APIs] --> Workers[Workers]
   Workers --> DB
   CMS --> AI[AI Provider Adapter]
   Server --> Email[Newsletter Adapter]
 ```
 
-### Why this direction
-
-- Stronger SEO/crawlable article rendering.
-- Dynamic metadata, sitemap and RSS fit naturally.
-- Existing React components remain reusable.
-- One application boundary keeps early production simpler.
-- Server-side auth/data/provider code can stay isolated from client code.
-- Background workers can still run separately when BullMQ arrives.
-
-Deep details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+ADR: [`docs/adr/ADR-001-nextjs-production-architecture.md`](docs/adr/ADR-001-nextjs-production-architecture.md)
 
 ---
 
-## 🚧 Phase 0 migration sequence
+## 💰 Planned business model
 
-```text
-0A Freeze V2.1 baseline
-        ↓
-0B Migrate routes/runtime to Next.js
-        ↓
-0C Stabilize GSAP + client/SSR boundaries
-        ↓
-0D Add PostgreSQL + Prisma + env validation
-        ↓
-0E Confirm Redis/queue boundary
-        ↓
-0F Add CI + reproducible setup
-        ↓
-0G Visual/manual regression QA
-        ↓
-Phase 0 complete
-```
+- 📢 restrained display advertising;
+- 🔗 useful affiliate content with disclosure;
+- 🤝 sponsorships;
+- 📬 newsletter sponsorship;
+- 📦 later digital products.
 
-Phase 0 intentionally does **not** add auth, CMS persistence, Content Radar, AI, newsletters or monetization. Those remain separate roadmap phases.
+Monetization is intentionally not implemented before the content/audience foundation.
 
 ---
 
-## 🗂️ Current repository
+## 🤖 Contributor / AI-agent rules
 
-```text
-src/
-├── app/
-├── components/
-│   └── global/
-├── content/
-├── context/
-├── hooks/
-├── screens/
-│   ├── Home/
-│   ├── Stories/
-│   ├── StoryDetail/
-│   ├── Category/
-│   ├── Search/
-│   ├── Newsletter/
-│   ├── About/
-│   ├── Contact/
-│   ├── Advertise/
-│   ├── Legal/
-│   ├── NotFound/
-│   └── Admin/
-├── styles/
-│   ├── tokens.css
-│   ├── global.css
-│   └── polish.css
-├── types/
-└── utils/
+Read before substantial work:
 
-docs/
-├── adr/
-│   └── ADR-001-nextjs-production-architecture.md
-├── PRD.md
-├── ARCHITECTURE.md
-├── ROADMAP.md
-└── PHASE-0-MIGRATION-PLAN.md
-```
+1. [`docs/PRD.md`](docs/PRD.md)
+2. [`docs/adr/ADR-001-nextjs-production-architecture.md`](docs/adr/ADR-001-nextjs-production-architecture.md)
+3. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+4. [`docs/PHASE-0-MIGRATION-PLAN.md`](docs/PHASE-0-MIGRATION-PLAN.md)
+5. [`docs/ROADMAP.md`](docs/ROADMAP.md)
 
-During migration, existing screens/components should be reused rather than rewritten only to look more "Next-like".
-
----
-
-## 🌐 Current V2.1 routes
-
-### Public
-
-| Route | Purpose |
-|---|---|
-| `/` | Editorial home |
-| `/stories` | Story archive |
-| `/stories/:slug` | Story detail |
-| `/category/:slug` | Category archive |
-| `/search` | Search |
-| `/newsletter` | Newsletter |
-| `/about` | About |
-| `/contact` | Contact |
-| `/advertise` | Sponsorship/advertising |
-| `/legal/*` | Privacy, terms, affiliate disclosure |
-
-### Publisher demo
-
-| Route | Purpose |
-|---|---|
-| `/admin` | Dashboard |
-| `/admin/posts` | Manage stories |
-| `/admin/posts/new` | New story |
-| `/admin/posts/:id/edit` | Edit story |
-| `/admin/audience` | Demo subscribers |
-| `/admin/settings` | Settings/demo reset |
-
-These admin routes are **not authenticated yet**. Authentication is Phase 1.
-
----
-
-## 🛠️ Run the current V2.1 baseline
-
-Requirements: **Node.js 20+** and npm.
-
-```bash
-git pull origin main
-npm install
-npm run dev
-```
-
-Current production check:
-
-```bash
-npm run typecheck
-npm run build
-npm run preview
-```
-
-> These commands will change as the active runtime moves from Vite to Next.js. Phase 0 implementation must update this section in the same change.
-
----
-
-## 🤖 Contributor / AI-agent guide
-
-Before substantial work, read in this order:
-
-1. [`docs/PRD.md`](docs/PRD.md) — what the product is.
-2. [`docs/adr/ADR-001-nextjs-production-architecture.md`](docs/adr/ADR-001-nextjs-production-architecture.md) — architecture decision.
-3. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — production boundaries.
-4. [`docs/PHASE-0-MIGRATION-PLAN.md`](docs/PHASE-0-MIGRATION-PLAN.md) — current implementation order.
-5. [`docs/ROADMAP.md`](docs/ROADMAP.md) — phase gates.
-
-### Rules
+### Non-negotiables
 
 - ✅ Work phase-by-phase.
 - ✅ Preserve V2.1 visual behavior during Phase 0.
-- ✅ Reuse existing React components before rewriting them.
-- ✅ Keep browser/GSAP code behind client boundaries.
-- ✅ Keep database/provider/secrets server-side.
-- ✅ External stories eventually enter Content Radar; never auto-publish them.
+- ✅ Reuse existing React screens/components when practical.
+- ✅ Keep GSAP/browser APIs behind client boundaries.
+- ✅ Keep secrets/database/provider code server-side.
+- ✅ External stories eventually enter Radar; never auto-publish them.
 - ✅ AI output remains editable and human-approved.
-- ✅ Add loading, empty, error, mobile and reduced-motion states.
-- ❌ Never commit `.env`, API keys or secrets.
-- ❌ Do not implement Phase 1+ features during Phase 0.
-- ❌ Do not mark a phase done because its UI exists.
+- ❌ Never commit `.env` secrets.
+- ❌ Do not silently implement Phase 1+ while Phase 0 is incomplete.
+- ❌ Do not call something complete without its verification gate.
 
-### 📚 Documentation is part of every feature
+### 📚 Documentation is part of the feature
 
 | Change | Update |
 |---|---|
-| Setup, env var, route, visible workflow | `README.md` |
-| Product scope / behavior | `docs/PRD.md` |
-| Architecture / provider / data/security | `docs/ARCHITECTURE.md` + ADR if needed |
-| Current Phase 0 execution | `docs/PHASE-0-MIGRATION-PLAN.md` |
-| Phase progress | `docs/ROADMAP.md` + README status |
-
-The root README should stay colorful, friendly and quick to scan. Deep engineering detail belongs under `docs/`.
+| Setup/env/route/visible workflow | `README.md` |
+| Product scope | `docs/PRD.md` |
+| Architecture/data/security | `docs/ARCHITECTURE.md` + ADR if needed |
+| Phase 0 execution | `docs/PHASE-0-MIGRATION-PLAN.md` |
+| Phase progress | `docs/ROADMAP.md` + README |
 
 ---
 
@@ -302,6 +325,6 @@ The root README should stay colorful, friendly and quick to scan. Deep engineeri
 
 **Minimal, not empty. Editorial, not generic. Automated where useful, human where it matters.**
 
-`V2.1 Stable → Phase 0 Next.js Foundation → Auth → CMS → Radar → AI → Distribution → Revenue`
+`V2.1 Stable → Next.js ✅ → Runtime Verification 🟡 → PostgreSQL/Prisma → Auth → CMS → Radar → AI → Revenue`
 
 </div>
