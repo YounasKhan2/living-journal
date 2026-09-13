@@ -4,43 +4,48 @@
 
 ## Current baseline
 
-### ✅ V2 — Reusable editorial frontend
+### ✅ V2.1 — Stable reusable editorial frontend
 
 Available today:
 - Multi-page React/Vite/TypeScript application.
 - Reusable public/admin screen architecture.
-- Premium editorial visual system and GSAP home motion.
+- Premium editorial visual system and GSAP motion.
 - Story/category/search/detail UI.
 - Local demo CMS using `localStorage`.
 - Newsletter demo capture.
-- Starter SEO public files.
+- Recovered responsive/internal-page styling.
 
-Known limitation: V2 is a frontend/local publishing demo, **not a production CMS**.
+Known limitation: V2.1 is a frontend/local publishing demo, **not a production CMS**.
 
 ---
 
-## Phase 0 — Architecture decision & production foundation
-**Status:** ⏭️ NEXT
+## Phase 0 — Next.js migration & production foundation
+**Status:** 🟡 IN PROGRESS
 
-### Objectives
-- Choose integrated Next.js architecture or separated Vite + NestJS architecture.
-- Preserve V2 visual/components while establishing production runtime.
-- Add environment validation and local infrastructure.
+### Decision completed
+- ✅ ADR-001 accepted: migrate to **Next.js App Router**.
+- ✅ PostgreSQL + Prisma selected as canonical data foundation.
+- ✅ Redis/BullMQ retained for durable jobs when needed.
+- ✅ V2.1 UI frozen as the migration visual baseline.
+- ✅ Detailed execution plan added in [`PHASE-0-MIGRATION-PLAN.md`](PHASE-0-MIGRATION-PLAN.md).
 
-### Deliverables
-- Architecture Decision Record for framework/backend path.
-- PostgreSQL connection + migrations.
-- Redis/queue foundation if required immediately.
-- Environment schema and `.env.example` without secrets.
-- Health/readiness checks where relevant.
-- CI checks for lint/typecheck/test/build.
-- Seed/dev workflow.
+### Remaining deliverables
+- ⬜ Migrate active runtime/routes from Vite/React Router to Next.js App Router.
+- ⬜ Stabilize GSAP/browser-only client boundaries under SSR.
+- ⬜ Add PostgreSQL/Prisma migration foundation.
+- ⬜ Add environment validation and `.env.example`.
+- ⬜ Add CI checks for lint/typecheck/test/build.
+- ⬜ Document reproducible local setup.
+- ⬜ Complete visual/manual regression audit.
 
 ### Exit criteria
 - Fresh clone can be configured from README.
+- All V2.1 routes have working Next.js equivalents.
+- V2.1 visual/motion behavior is preserved.
+- No hydration/runtime errors.
 - Database migration succeeds locally.
-- CI/build baseline is green.
-- No production content depends on browser `localStorage` after the later migration phase; Phase 0 only establishes infrastructure.
+- CI/build/typecheck/lint/test baseline is green.
+- No Phase 1+ feature is accidentally claimed as complete.
 
 ---
 
@@ -73,7 +78,7 @@ Known limitation: V2 is a frontend/local publishing demo, **not a production CMS
 - Preview.
 - Revisions/audit metadata.
 - Media upload/storage + alt/attribution metadata.
-- Migrate public site from local seed/context to API/server data.
+- Migrate public site from local seed/context to canonical database content.
 
 ### Exit criteria
 - Editor can create, edit, preview, schedule and publish a story end-to-end.
@@ -223,5 +228,5 @@ A phase is not complete because the UI exists. It is complete when:
 4. Typecheck/build/tests pass.
 5. No secrets are committed.
 6. Root `README.md` reflects new setup/workflows/status.
-7. `PRD.md`, `ARCHITECTURE.md`, or this roadmap are updated if the implementation changed their assumptions.
+7. `PRD.md`, `ARCHITECTURE.md`, or this roadmap are updated if implementation changed assumptions.
 8. A concise commit/PR summary records what changed, verification performed and known limitations.
