@@ -9,8 +9,8 @@
 | 0A | Freeze/inventory V2.1 | ✅ Complete |
 | 0B | Next.js App Router migration | ✅ Complete |
 | 0C | GSAP + browser/SSR stabilization | ✅ Verified locally |
-| 0D | PostgreSQL + Prisma + env validation | 🟡 Implemented; local DB verification required |
-| 0E | Redis/queue boundary | ⬜ Planned |
+| 0D | PostgreSQL + Prisma + env validation | ✅ Verified locally |
+| 0E | Redis/BullMQ queue boundary | 🟡 Implemented; local verification required |
 | 0F | CI + developer experience | ⬜ Planned |
 | 0G | Visual/manual regression QA | ⬜ Planned |
 
@@ -34,75 +34,82 @@ Completed:
 
 Verified locally by the project owner after running the migrated application/build.
 
-Implemented safeguards include:
-- explicit client boundaries for GSAP/browser state;
-- `gsap.context()` cleanup;
-- no fragile full-page pinned rail;
-- reduced-motion support;
-- SSR-safe localStorage hydration;
-- no stale React Router/Vite references.
+Implemented safeguards include explicit client boundaries for GSAP/browser state, `gsap.context()` cleanup, reduced-motion support and SSR-safe localStorage hydration.
 
-## 0D — PostgreSQL + Prisma 🟡
+## 0D — PostgreSQL + Prisma ✅
+
+Verified locally by the project owner on 2026-09-13:
+- PostgreSQL Compose container healthy on host port `5433`;
+- Prisma schema validation/generation succeeded;
+- migration + seed completed after aligning `DATABASE_URL`;
+- `GET /api/health/database` returned HTTP 200 with `dependency: "postgresql"`.
+
+Prisma remains pinned to 7.10.0. Only the minimal `SystemSetting` foundation model exists; User/Auth/Post/CMS models remain deferred.
+
+## 0E — Redis/BullMQ boundary 🟡
 
 ### Implemented
 
-- Prisma ORM **7.10.0** is deliberately pinned while Prisma 8 tooling is in transition.
-- PostgreSQL driver adapter (`@prisma/adapter-pg`) and `pg` added.
-- `prisma.config.ts` added with migration + seed configuration.
-- `prisma/schema.prisma` added.
-- Minimal `SystemSetting` model added strictly to prove the foundation.
-- Initial SQL migration committed.
-- Explicit development seed added (`foundation.status`).
-- Typed server-only Zod environment validation added.
-- Server-only singleton Prisma client added.
-- `GET /api/health/database` added.
-- `.env.example` now documents `DATABASE_URL`.
-- `compose.yaml` provides optional PostgreSQL 16 local infrastructure.
-- DB scripts added to `package.json`.
+- Redis 7 Alpine local service in `compose.yaml` with AOF persistence and health check.
+- Host port `6380` maps to container port `6379` to reduce collisions with local Redis installations.
+- `REDIS_URL` added to `.env.example` and typed server environment validation.
+- `ioredis` server-only singleton with development hot-reload reuse.
+- BullMQ dependency and server-only queue producer factory.
+- Reserved queue names:
+  - `content-ingestion`
+  - `scheduled-publish`
+  - `newsletter-send`
+  - `ai-background`
+- Reserved job names for future owning phases.
+- Retry/backoff/removal defaults centralized in the queue contract.
+- `GET /api/health/redis` added.
 
-### Why only `SystemSetting`?
+### Deliberate boundary
 
-Phase 0 must prove schema/migration/data access without starting Phase 1/2. User/Auth/Post/CMS models are intentionally deferred.
+Phase 0E **does not create workers or enqueue fake product jobs**. Content ingestion belongs to Phase 3, scheduled publishing to the production CMS lifecycle, newsletter sending to Phase 6, and AI background work to Phase 4. A producer queue is created only when a future feature explicitly requests it.
 
 ### Local verification gate
 
-```bash
-# after git pull + npm install
-Copy-Item .env.example .env
+After pulling and installing, merge the new Redis setting into existing local env files rather than overwriting secrets/configuration:
 
-docker compose up -d postgres
-npm run db:validate
-npm run db:generate
-npm run db:deploy
-npm run db:seed
+```text
+REDIS_URL=redis://localhost:6380
+```
+
+Then:
+
+```powershell
+docker compose up -d postgres redis
+docker compose ps
 npm run typecheck
 npm run build
 npm run dev
 ```
 
-Then verify:
+Verify:
 
 ```text
-GET http://localhost:3000/api/health
 GET http://localhost:3000/api/health/database
+GET http://localhost:3000/api/health/redis
 ```
 
-Expected database health status: HTTP 200 with `dependency: "postgresql"`.
+Expected Redis response is HTTP 200 and includes:
 
-If PostgreSQL is installed separately, Docker is optional; point `DATABASE_URL` at that instance instead.
+```json
+{
+  "status": "ok",
+  "dependency": "redis"
+}
+```
 
 ### Gate
 
-0D becomes ✅ only when:
-- migration deploy succeeds against a fresh PostgreSQL database;
-- seed succeeds;
-- `/api/health/database` returns 200;
+0E becomes ✅ only when:
+- Redis Compose service reports healthy;
+- `/api/health/redis` returns HTTP 200;
+- database health remains green;
 - typecheck/build remain green;
-- no secrets are committed.
-
-## 0E — Redis/queue boundary ⬜
-
-Redis/BullMQ remain required before durable ingestion, scheduled publishing or newsletter jobs. Phase 0E will define the adapter/runtime boundary without inventing jobs that do not yet exist.
+- no product jobs/workers were prematurely introduced.
 
 ## 0F — CI/developer experience ⬜
 
@@ -127,9 +134,9 @@ Final audit covers all public/admin demo routes, desktop/tablet/mobile/narrow-mo
       ↓
 0C ✅ SSR / GSAP verified
       ↓
-0D 🟡 PostgreSQL + Prisma implemented → local DB verification
+0D ✅ PostgreSQL + Prisma verified
       ↓
-0E Redis / queue boundary
+0E 🟡 Redis / BullMQ boundary → local verification
       ↓
 0F CI + reproducible setup
       ↓
@@ -142,4 +149,4 @@ Phase 1 Auth/RBAC
 
 ## Phase 0 definition of done
 
-Phase 0 is complete only when the Next.js runtime is verified, V2.1 remains visually intact, browser/client boundaries are stable, PostgreSQL/Prisma setup is reproducible, verification/CI is green, documentation describes reality and no Phase 1+ feature is falsely claimed as complete.
+Phase 0 is complete only when the Next.js runtime is verified, V2.1 remains visually intact, browser/client boundaries are stable, PostgreSQL/Prisma and Redis/BullMQ foundations are reproducible, verification/CI is green, documentation describes reality and no Phase 1+ feature is falsely claimed as complete.
