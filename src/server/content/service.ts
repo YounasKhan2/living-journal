@@ -2,6 +2,7 @@ import 'server-only'
 
 import { Prisma } from '../../generated/prisma/client'
 import { prisma } from '../db/prisma'
+import { cancelScheduledPublishJob, schedulePublishJob } from '../jobs/scheduled-publish'
 import { slugify } from '../../utils/format'
 import { normalizePostSlug } from './slug'
 import { assertPostTransition } from './transitions'
@@ -171,18 +172,20 @@ export async function updatePostDraft(postId: string, rawPatch: PostPatch, userI
 }
 
 export async function transitionPost(postId: string, nextStatus: PostStatusValue, userId: string, scheduledAtInput?: string) {
-  return prisma.$transaction(async tx => {
+  let nextScheduledAt: Date | null = null
+
+  const result = await prisma.$transaction(async tx => {
     const current = await tx.post.findUnique({ where: { id: postId } })
     if (!current) throw new Error('POST_NOT_FOUND')
 
     assertPostTransition(current.status, nextStatus)
 
     const now = new Date()
-    const scheduledAt = nextStatus === 'SCHEDULED'
+    nextScheduledAt = nextStatus === 'SCHEDULED'
       ? new Date(scheduledAtInput ?? '')
       : null
 
-    if (nextStatus === 'SCHEDULED' && (Number.isNaN(scheduledAt?.getTime()) || scheduledAt! <= now)) {
+    if (nextStatus === 'SCHEDULED' && (Number.isNaN(nextScheduledAt?.getTime()) || nextScheduledAt! <= now)) {
       throw new Error('INVALID_SCHEDULE_TIME')
     }
 
@@ -190,7 +193,7 @@ export async function transitionPost(postId: string, nextStatus: PostStatusValue
       where: { id: postId },
       data: {
         status: nextStatus,
-        scheduledAt,
+        scheduledAt: nextScheduledAt,
         publishedAt: nextStatus === 'PUBLISHED' ? (current.publishedAt ?? now) : current.publishedAt,
         updatedById: userId,
       },
@@ -199,10 +202,18 @@ export async function transitionPost(postId: string, nextStatus: PostStatusValue
     await createRevision(tx, postId, userId)
     return tx.post.findUniqueOrThrow({ where: { id: postId }, include: { category: true } })
   })
+
+  if (nextStatus === 'SCHEDULED' && nextScheduledAt) {
+    await schedulePublishJob(postId, nextScheduledAt)
+  } else {
+    await cancelScheduledPublishJob(postId).catch(() => undefined)
+  }
+
+  return result
 }
 
 export async function restorePostRevision(postId: string, revisionId: string, userId: string) {
-  return prisma.$transaction(async tx => {
+  const result = await prisma.$transaction(async tx => {
     const revision = await tx.postRevision.findFirst({
       where: { id: revisionId, postId },
     })
@@ -253,6 +264,9 @@ export async function restorePostRevision(postId: string, revisionId: string, us
       include: { category: true, tags: { include: { tag: true } } },
     })
   })
+
+  await cancelScheduledPublishJob(postId).catch(() => undefined)
+  return result
 }
 
 export async function deleteDraft(postId: string) {
@@ -260,4 +274,5 @@ export async function deleteDraft(postId: string) {
   if (!post) throw new Error('POST_NOT_FOUND')
   if (post.status !== 'DRAFT') throw new Error('ONLY_DRAFTS_CAN_BE_DELETED')
   await prisma.post.delete({ where: { id: postId } })
+  await cancelScheduledPublishJob(postId).catch(() => undefined)
 }
