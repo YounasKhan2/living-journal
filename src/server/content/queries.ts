@@ -4,6 +4,7 @@ import { prisma } from '../db/prisma'
 
 const postInclude = {
   category: true,
+  coverMedia: true,
   tags: { include: { tag: true } },
 } as const
 
