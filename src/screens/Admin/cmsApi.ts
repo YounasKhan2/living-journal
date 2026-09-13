@@ -3,6 +3,17 @@ import { slugify } from '../../utils/format'
 
 type ApiError = { error?: string }
 
+export type PostRevisionSummary = {
+  id: string
+  version: number
+  createdAt: string
+  createdBy: {
+    id: string
+    name: string
+    email: string
+  }
+}
+
 type PostPayload = {
   slug: string
   title: string
@@ -80,6 +91,20 @@ export async function updatePost(post: Post) {
 export async function deletePost(id: string) {
   const response = await fetch(`/api/admin/posts/${encodeURIComponent(id)}`, { method: 'DELETE' })
   await parseResponse<{ ok: true }>(response)
+}
+
+export async function listPostRevisions(id: string) {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(id)}/revisions`, { cache: 'no-store' })
+  const payload = await parseResponse<{ revisions: PostRevisionSummary[] }>(response)
+  return payload.revisions
+}
+
+export async function restorePostRevision(id: string, revisionId: string) {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(id)}/revisions/${encodeURIComponent(revisionId)}/restore`, {
+    method: 'POST',
+  })
+  const payload = await parseResponse<{ post: Post }>(response)
+  return payload.post
 }
 
 const statusToServer = {
