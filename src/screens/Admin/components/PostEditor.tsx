@@ -134,6 +134,22 @@ export function PostEditor({ initialPost, onSave, onTransition }: PostEditorProp
     }
   }
 
+  async function schedulePost() {
+    if (pending) return
+    if (!scheduledAt) {
+      setError('Choose a future publish date and time before scheduling this story.')
+      return
+    }
+
+    const publishAt = new Date(scheduledAt)
+    if (Number.isNaN(publishAt.getTime()) || publishAt.getTime() <= Date.now()) {
+      setError('Scheduled publish time must be in the future.')
+      return
+    }
+
+    await transition('scheduled')
+  }
+
   function handleMediaUploaded(asset: UploadedMediaAsset) {
     setDraft(current => ({
       ...current,
@@ -170,7 +186,7 @@ export function PostEditor({ initialPost, onSave, onTransition }: PostEditorProp
         <div className="editor-status"><span>Status</span><strong>{statusLabel[draft.status]}</strong></div>
         {!isPersisted ? <p className="editor-help">Save this draft once to unlock review and publishing actions.</p> : null}
         {isPersisted ? <Link className="editor-preview-link" href={`/preview/${draft.id}`} target="_blank"><Eye size={16}/>Preview saved version</Link> : null}
-        {draft.status === 'in_review' && isPersisted ? <label>Schedule time<input type="datetime-local" value={scheduledAt} onChange={event => setScheduledAt(event.target.value)}/></label> : null}
+        {draft.status === 'in_review' && isPersisted ? <label>Publish date & time<input type="datetime-local" value={scheduledAt} onChange={event => { setScheduledAt(event.target.value); setError('') }}/><small className="editor-help">Choose a future local date and time, then click Schedule.</small></label> : null}
         <label>Read time<input value={draft.readTime} onChange={event => update('readTime', event.target.value)}/></label>
         <div className="editor-checks"><label><input type="checkbox" checked={Boolean(draft.featured)} onChange={event => update('featured', event.target.checked)}/> Featured story</label><label><input type="checkbox" checked={Boolean(draft.trending)} onChange={event => update('trending', event.target.checked)}/> Trending</label></div>
       </div>
@@ -178,7 +194,7 @@ export function PostEditor({ initialPost, onSave, onTransition }: PostEditorProp
       <div className="post-editor__actions">
         {draft.status !== 'archived' ? <button disabled={pending || !dirty} type="submit" className="admin-button admin-button--ghost"><FloppyDisk size={17}/>{pending ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}</button> : null}
         {isPersisted && draft.status === 'draft' ? <button disabled={pending} type="button" className="admin-button" onClick={() => void transition('in_review')}><PaperPlaneRight size={17}/>Submit for review</button> : null}
-        {isPersisted && draft.status === 'in_review' ? <><button disabled={pending} type="button" className="admin-button admin-button--ghost" onClick={() => void transition('draft')}><ArrowCounterClockwise size={17}/>Return to draft</button><button disabled={pending || !scheduledAt} type="button" className="admin-button admin-button--ghost" onClick={() => void transition('scheduled')}><Clock size={17}/>Schedule</button><button disabled={pending} type="button" className="admin-button" onClick={() => void transition('published')}><PaperPlaneRight size={17}/>Publish</button></> : null}
+        {isPersisted && draft.status === 'in_review' ? <><button disabled={pending} type="button" className="admin-button admin-button--ghost" onClick={() => void transition('draft')}><ArrowCounterClockwise size={17}/>Return to draft</button><button disabled={pending} type="button" className="admin-button admin-button--ghost" onClick={() => void schedulePost()}><Clock size={17}/>Schedule</button><button disabled={pending} type="button" className="admin-button" onClick={() => void transition('published')}><PaperPlaneRight size={17}/>Publish</button></> : null}
         {isPersisted && draft.status === 'scheduled' ? <><button disabled={pending} type="button" className="admin-button admin-button--ghost" onClick={() => void transition('draft')}><ArrowCounterClockwise size={17}/>Unschedule</button><button disabled={pending} type="button" className="admin-button" onClick={() => void transition('published')}><PaperPlaneRight size={17}/>Publish now</button></> : null}
         {isPersisted && draft.status === 'published' ? <button disabled={pending} type="button" className="admin-button admin-button--ghost" onClick={() => void transition('archived')}><Archive size={17}/>Archive</button> : null}
         {isPersisted && draft.status === 'archived' ? <button disabled={pending} type="button" className="admin-button" onClick={() => void transition('draft')}><ArrowCounterClockwise size={17}/>Restore as draft</button> : null}
