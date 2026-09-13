@@ -1,8 +1,10 @@
-# 🚧 Phase 0 — Production Foundation & Next.js Migration Plan
+# ✅ Phase 0 — Production Foundation & Next.js Migration
 
 > **Goal:** establish the production runtime/data/developer-verification foundation without redesigning V2.1 or prematurely implementing Auth/CMS/Radar/AI.
 
-## Current checkpoint
+## Completion status
+
+**Phase 0: ✅ COMPLETE**
 
 | Subphase | Scope | Status |
 |---|---|---|
@@ -12,13 +14,13 @@
 | 0D | PostgreSQL + Prisma + env validation | ✅ Verified locally |
 | 0E | Redis/BullMQ queue boundary | ✅ Verified locally |
 | 0F | Reproducible developer verification | ✅ Verified locally |
-| 0G | Visual/manual regression QA | 🟡 Current |
+| 0G | Visual/manual regression QA | ✅ Verified locally |
 
-Phase 0 does **not** include authentication/RBAC, production CMS persistence, Content Radar, AI generation, newsletter delivery or monetization providers.
+Phase 0 deliberately did **not** implement authentication/RBAC, production CMS persistence, Content Radar, AI generation, newsletter delivery or monetization providers.
 
 ## 0A — V2.1 baseline ✅
 
-The V2.1 visual baseline remains frozen through the existing screen/component architecture plus `tokens.css`, `global.css` and `polish.css`. Phase 0 changes compatibility/runtime boundaries only.
+The V2.1 visual baseline remains preserved through the existing screen/component architecture plus `tokens.css`, `global.css` and `polish.css`.
 
 ## 0B — Next.js App Router ✅
 
@@ -55,24 +57,23 @@ The boundary includes a server-only Redis client, BullMQ producer factory, queue
 ## 0F — Reproducible developer verification ✅
 
 Implemented and verified:
-- ESLint 9 + Next.js core-web-vitals/TypeScript configuration.
-- `npm run lint`.
-- Node test-runner baseline via `tsx --test`.
-- Initial utility tests for canonical slug formatting.
-- `npm run test`.
-- Aggregate `npm run verify` command:
+- ESLint 9 + Next.js core-web-vitals/TypeScript configuration;
+- Node test-runner baseline via `tsx --test`;
+- utility tests for canonical slug formatting;
+- aggregate `npm run verify` command: `db:validate → lint → typecheck → test → build`;
+- current `package-lock.json` committed and deterministic `npm ci` supported;
+- local verification passed end-to-end;
+- generated TypeScript build metadata ignored.
 
-```text
-db:validate → lint → typecheck → test → build
-```
+GitHub-hosted Actions is not part of the required project gate because the account cannot start hosted jobs without resolving a billing restriction. Local deterministic verification is the canonical gate.
 
-- Current `package-lock.json` is committed and deterministic `npm ci` installs are supported.
-- Local verification passed end-to-end with 0 lint errors, green typecheck, 3/3 baseline tests and a successful production Next.js build.
-- Generated TypeScript build metadata is ignored.
+## 0G — Visual/manual regression QA ✅
 
-GitHub-hosted Actions was evaluated but is not part of the required project gate because the account cannot start hosted jobs without resolving a billing restriction. The hosted workflow has therefore been removed rather than leaving every push with a false red status. Local deterministic verification is the canonical Phase 0F gate.
+The project owner completed the final browser regression pass after the 0G hardening changes and confirmed it passed. The audit covered the public/admin demo experience, responsive layouts, navigation/interactions, browser/runtime smoke checks and preservation of the accepted V2.1 visual system.
 
-### Local verification gate
+The detailed checklist remains in [`PHASE-0G-QA.md`](PHASE-0G-QA.md).
+
+## Final Phase 0 verification path
 
 ```powershell
 git pull origin main
@@ -80,46 +81,23 @@ npm ci
 npm run verify
 ```
 
-Infrastructure should remain healthy:
+## Phase 0 definition of done — satisfied ✅
 
-```powershell
-docker compose ps
-```
+Phase 0 exits with:
+- Next.js runtime verified;
+- V2.1 visually intact;
+- browser/client boundaries stable;
+- PostgreSQL/Prisma foundation reproducible;
+- Redis/BullMQ foundation reproducible;
+- deterministic dependency installation and local verification available;
+- final regression QA passed;
+- documentation aligned with implementation;
+- no Phase 1+ feature falsely claimed complete.
 
-### Gate ✅
-
-0F is complete because:
-- current dependency lockfile is committed;
-- deterministic `npm ci` installation is available;
-- local lint/typecheck/test/build pass;
-- README setup matches the actual workflow.
-
-## 0G — Visual/manual regression QA 🟡
-
-Final audit covers all public/admin demo routes, desktop/tablet/mobile/narrow-mobile, keyboard focus, mobile menu, reduced motion, overflow, hydration console and image/layout stability.
-
-## Execution order
+## Next
 
 ```text
-0A ✅ V2.1 frozen
-      ↓
-0B ✅ Next.js App Router
-      ↓
-0C ✅ SSR / GSAP verified
-      ↓
-0D ✅ PostgreSQL + Prisma verified
-      ↓
-0E ✅ Redis / BullMQ verified
-      ↓
-0F ✅ deterministic local verification
-      ↓
-0G 🟡 regression QA
-      ↓
-Phase 0 complete
-      ↓
-Phase 1 Auth/RBAC
+Phase 0 foundation ✅
+        ↓
+Phase 1 Authentication & RBAC 🟡
 ```
-
-## Phase 0 definition of done
-
-Phase 0 is complete only when the Next.js runtime is verified, V2.1 remains visually intact, browser/client boundaries are stable, PostgreSQL/Prisma and Redis/BullMQ foundations are reproducible, dependency installation and local verification are deterministic, documentation describes reality and no Phase 1+ feature is falsely claimed as complete.
