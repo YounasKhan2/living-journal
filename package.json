@@ -11,6 +11,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:validate": "prisma validate"
   },
@@ -33,6 +34,7 @@
     "@types/react-dom": "^19.1.7",
     "dotenv": "^17.2.2",
     "prisma": "7.10.0",
+    "tsx": "^4.20.5",
     "typescript": "^5.9.2"
   },
   "description": "Human-led, AI-assisted editorial technology publication"
