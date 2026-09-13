@@ -1,150 +1,184 @@
-# The Living Journal
+<div align="center">
 
-A reusable, multi-page editorial blog starter built with React, TypeScript, Vite, React Router and GSAP.
+# 📰 The Living Journal
 
-The project is structured as a real application rather than a single-page demo. Public pages, screen-specific components, global components, content types, seed data, local publishing state and admin screens are separated so the site can grow without turning `App.tsx` into a monolith.
+### A human-led, AI-assisted technology publication
 
-## Visual direction
+**Discover → Research → Edit → Publish → Distribute → Monetize**
 
-The refreshed system uses a restrained editorial palette:
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)
+![GSAP](https://img.shields.io/badge/GSAP-Motion-88CE02)
+![Status](https://img.shields.io/badge/Product-V2%20Complete-2ea44f)
+![Next](https://img.shields.io/badge/Next-Production%20Foundation-f59e0b)
 
-- Bone paper background
-- Charcoal typography
-- Cobalt primary accent
-- Soft periwinkle, sage and peach supporting surfaces
-- Large serif editorial headlines with compact sans-serif UI copy
-- Rounded media frames, but not card-heavy UI
-- GSAP motion reserved for major storytelling moments
+A reusable Awwwards-inspired editorial frontend evolving into a production publishing platform for **AI, software, startups, products, careers, business and future technology**.
 
-Theme tokens live in `src/styles/tokens.css`.
+[Product Requirements](docs/PRD.md) · [Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md)
 
-## Project structure
+</div>
+
+---
+
+## ✨ What we're building
+
+The Living Journal is not intended to become an automated news scraper. The product combines original publishing with a **Content Radar** that discovers useful stories from RSS/approved APIs and an **AI Editorial Copilot** that helps editors research and draft.
+
+> **APIs discover. AI assists. Humans decide. The Journal publishes.**
+
+The long-term business combines quality editorial content, SEO, newsletters, affiliate content, sponsorships and eventually advertising/digital products.
+
+---
+
+## 🧭 Core workflow
+
+```mermaid
+flowchart LR
+  Sources[RSS / Approved APIs] --> Radar[Content Radar]
+  Manual[Original Story] --> Draft[Editorial Draft]
+  Radar --> Research[Research Workspace]
+  Research --> AI[AI Assistance]
+  AI --> Draft
+  Draft --> Review[Human Review]
+  Review --> Publish[Publish / Schedule]
+  Publish --> Web[Website + SEO]
+  Publish --> Newsletter[Newsletter]
+  Web --> Revenue[Ads / Affiliate / Sponsors]
+  Newsletter --> Revenue
+  Web --> Analytics[Analytics]
+```
+
+**Important:** external source items are editorial leads. They are never silently copied or auto-published, and AI never receives direct production-publish authority.
+
+---
+
+## 🚦 Project status
+
+| Phase | Scope | Status |
+|---|---|---|
+| V2 | Reusable editorial frontend + GSAP visual system | ✅ Complete |
+| Phase 0 | Architecture decision + DB/infrastructure/CI foundation | ⏭️ Next |
+| Phase 1 | Authentication + RBAC | ⬜ Planned |
+| Phase 2 | Production CMS + media + persistent content | ⬜ Planned |
+| Phase 3 | Content Radar + RSS/API ingestion | ⬜ Planned |
+| Phase 4 | AI Editorial Copilot | ⬜ Planned |
+| Phase 5 | Dynamic SEO + sitemap + RSS/distribution | ⬜ Planned |
+| Phase 6 | Audience + production newsletter | ⬜ Planned |
+| Phase 7 | Monetization | ⬜ Planned |
+| Phase 8 | Analytics + hardening + launch | ⬜ Planned |
+
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for deliverables and exit criteria.
+
+---
+
+## 🎨 V2 experience
+
+The current application provides:
+
+- 🏠 Layered editorial homepage with warm stone, sage and periwinkle surfaces.
+- 🎞️ GSAP hero parallax, scroll-linked storytelling, signal ticker and pinned editorial rail.
+- 🗞️ Story archive, category pages, search and story details.
+- ✍️ Reusable local demo post editor with drafts/publishing.
+- 📬 Newsletter signup demo and audience screen.
+- 📱 Responsive behavior and reduced-motion support.
+- 🧩 Screen-local components plus reusable global components.
+- 🔎 Starter robots, sitemap and RSS assets.
+
+### ⚠️ Current V2 boundary
+
+V2 uses browser `localStorage` for demo publishing/subscribers. It is **not yet a multi-user production CMS**. Authentication, durable content, media, source ingestion, AI, newsletter delivery and monetization are intentionally part of the phased V3 roadmap.
+
+---
+
+## 🗂️ Current project structure
 
 ```text
 src/
-  app/
-    App.tsx
+├── app/
+│   └── App.tsx
+├── components/
+│   └── global/                 # shared public UI
+├── content/
+│   ├── categories.ts
+│   └── seedPosts.ts
+├── context/
+│   └── ContentContext.tsx      # V2 local demo persistence
+├── hooks/
+├── screens/
+│   ├── Home/
+│   │   ├── HomeScreen.tsx
+│   │   └── components/
+│   │       ├── Hero.tsx
+│   │       ├── SignalTicker.tsx
+│   │       ├── LeadStory.tsx
+│   │       ├── LatestStories.tsx
+│   │       ├── BriefingGrid.tsx
+│   │       ├── EditorialRail.tsx
+│   │       ├── Trending.tsx
+│   │       └── NewsletterBand.tsx
+│   ├── Stories/
+│   ├── StoryDetail/
+│   ├── Category/
+│   ├── Search/
+│   ├── Newsletter/
+│   ├── About/
+│   ├── Contact/
+│   ├── Advertise/
+│   ├── Legal/
+│   ├── NotFound/
+│   └── Admin/
+├── styles/
+│   ├── tokens.css
+│   └── global.css
+├── types/
+└── utils/
 
-  components/
-    global/
-      ArrowButton.tsx
-      ArticleCard.tsx
-      Brand.tsx
-      NewsletterForm.tsx
-      PublicLayout.tsx
-      ScrollRestoration.tsx
-      SectionHeading.tsx
-      SiteFooter.tsx
-      SiteHeader.tsx
-
-  content/
-    categories.ts
-    seedPosts.ts
-
-  context/
-    ContentContext.tsx
-
-  hooks/
-    useDocumentTitle.ts
-
-  screens/
-    Home/
-      HomeScreen.tsx
-      components/
-        Hero.tsx
-        LeadStory.tsx
-        LatestStories.tsx
-        EditorialRail.tsx
-        Trending.tsx
-        NewsletterBand.tsx
-
-    Stories/
-      StoriesScreen.tsx
-      components/
-        StoriesGrid.tsx
-
-    StoryDetail/
-      StoryDetailScreen.tsx
-      components/
-        ArticleBody.tsx
-        RelatedStories.tsx
-
-    Category/
-    Search/
-    Newsletter/
-    About/
-    Contact/
-    Advertise/
-    Legal/
-    NotFound/
-
-    Admin/
-      AdminDashboardScreen.tsx
-      AdminPostsScreen.tsx
-      AdminPostEditorScreen.tsx
-      AdminAudienceScreen.tsx
-      AdminSettingsScreen.tsx
-      components/
-        AdminHeader.tsx
-        AdminLayout.tsx
-        PostEditor.tsx
-
-  styles/
-    tokens.css
-    global.css
-
-  types/
-    content.ts
-
-  utils/
-    format.ts
+docs/
+├── PRD.md
+├── ARCHITECTURE.md
+└── ROADMAP.md
 ```
 
-## Public routes
+Screen-specific components stay with their screen; components shared across multiple product areas belong in the global/shared layer.
 
-- `/` — Home
-- `/stories` — Story archive with category filtering
-- `/stories/:slug` — Full story detail page
-- `/category/:slug` — Category archive
-- `/search` — Live client-side search
-- `/newsletter` — Newsletter landing page
-- `/about` — Publication story
-- `/contact` — Contact form UI
-- `/advertise` — Sponsorship and advertising page
-- `/legal/privacy` — Privacy starter
-- `/legal/terms` — Terms starter
-- `/legal/affiliate-disclosure` — Affiliate disclosure starter
+---
 
-## Publisher routes
+## 🌐 Routes today
 
-- `/admin` — Dashboard
-- `/admin/posts` — Manage stories
-- `/admin/posts/new` — Create story
-- `/admin/posts/:id/edit` — Edit story
-- `/admin/audience` — Newsletter subscribers
-- `/admin/settings` — Publication settings/demo reset
+### Public
 
-## Reusable content layer
+| Route | Purpose |
+|---|---|
+| `/` | Editorial home |
+| `/stories` | Story archive |
+| `/stories/:slug` | Story detail |
+| `/category/:slug` | Category archive |
+| `/search` | Search |
+| `/newsletter` | Newsletter landing |
+| `/about` | Publication story |
+| `/contact` | Contact |
+| `/advertise` | Sponsorship/advertising |
+| `/legal/*` | Privacy, terms and affiliate disclosure |
 
-`ContentContext` provides one source of truth for public and admin screens.
+### Publisher demo
 
-It currently persists to browser `localStorage`, which means the complete publishing flow can be tested without a backend:
+| Route | Purpose |
+|---|---|
+| `/admin` | Overview |
+| `/admin/posts` | Manage stories |
+| `/admin/posts/new` | Create story |
+| `/admin/posts/:id/edit` | Edit story |
+| `/admin/audience` | Demo subscribers |
+| `/admin/settings` | Publication/demo settings |
 
-- create a post
-- edit a post
-- save a draft
-- publish a post
-- mark featured/trending
-- delete a post
-- filter/search public stories
-- capture newsletter emails
-- inspect subscribers in admin
+These admin routes are UI/demo routes until Phase 1 introduces real authentication and authorization.
 
-For production, keep the components/screens and replace the storage functions in `ContentContext.tsx` with API calls to your backend/database.
+---
 
-## Article editor syntax
+## ✍️ V2 editor syntax
 
-The lightweight admin editor understands reusable article blocks:
+The lightweight editor supports reusable blocks:
 
 ```text
 Normal paragraph
@@ -156,60 +190,124 @@ Normal paragraph
 ![Alternative text](https://example.com/image.jpg) "Optional caption"
 ```
 
-This lets headings, quotes, images and paragraphs survive editing. A production version can replace this UI with TipTap or Lexical while keeping the same `ArticleSection` data type.
+Phase 2 will replace/upgrade this with a production structured editor while preserving a clean article data model.
 
-## SEO/public assets
+---
 
-`public/` includes starter files for:
+## 🧱 Target production architecture
 
-- `robots.txt`
-- `sitemap.xml`
-- `rss.xml`
+```mermaid
+flowchart TB
+  Public[Public Publication] --> App[Application/API Layer]
+  CMS[Authenticated CMS] --> App
+  App --> DB[(PostgreSQL)]
+  App --> Storage[(Object Storage)]
+  App --> Redis[(Redis / Queue)]
+  Sources[RSS / Approved APIs] --> Workers[Ingestion Workers]
+  Workers --> DB
+  DB --> CMS
+  CMS --> AI[AI Provider Adapter]
+  App --> Email[Newsletter/Email Adapter]
+  Public --> Analytics[Analytics]
+```
 
-Replace `https://example.com` with the production domain and generate article URLs dynamically when a backend is connected.
+The preferred direction is to evaluate a **Next.js production migration** so public stories have strong server-rendered SEO while preserving the V2 React components/design system. A Vite + NestJS service architecture remains an alternative; Phase 0 must record the final decision before implementation expands.
 
-## Local development
+Deep technical details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+---
+
+## 💰 Revenue model
+
+The product is designed to support several channels instead of depending on one:
+
+| Channel | Intended use |
+|---|---|
+| 📢 Display advertising | Activated only when content/traffic justify it |
+| 🔗 Affiliate content | Useful tool/product comparisons with disclosure |
+| 🤝 Sponsorships | Sponsored stories, placements and campaigns |
+| 📬 Newsletter sponsorship | Monetize a direct subscriber audience |
+| 📦 Digital products | Later: guides, templates, developer resources |
+
+Monetization must never overwhelm editorial quality. Sponsored and affiliate relationships must be clearly disclosed.
+
+---
+
+## 🛠️ Local development
+
+### Requirements
+
+- Node.js 20+ recommended
+- npm
+
+### Start
 
 ```bash
 npm install
 npm run dev
 ```
 
-Production build:
+### Production build
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## Before production launch
+> The V2 source was created before the production backend phase. Phase 0 will add formal environment validation, database setup and CI instructions here once those choices are implemented.
 
-The UI and local publishing flow are complete as a reusable frontend. For a real multi-user production publication, connect:
+---
 
-- PostgreSQL/Supabase or another persistent database
-- authenticated admin sessions/RBAC
-- object storage for media uploads
-- email provider for contact/newsletter delivery
-- server-side/dynamic SEO metadata
-- analytics
-- AdSense/Ad Manager or sponsorship reporting
-- server-generated sitemap/RSS
+## 🤖 Contributor & AI-agent guide
 
-The architecture is intentionally prepared so those services can replace the local adapters without redesigning every screen.
+Before making a substantial change, read:
 
-## Visual refresh — Home V2
+1. [`docs/PRD.md`](docs/PRD.md) — **what** the product must do.
+2. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — **how** production responsibilities are separated.
+3. [`docs/ROADMAP.md`](docs/ROADMAP.md) — **what phase is allowed next**.
 
-The landing page now uses a layered editorial canvas instead of a plain white background. The refresh adds:
+### Development rules
 
-- Warm stone, sage and soft periwinkle background choreography.
-- Fixed grain texture and subtle hero grid/orbit details.
-- Scroll-driven hero parallax and image scale interpolation.
-- Moving signal ticker between the hero and daily edition.
-- A new dense `BriefingGrid` / Editor's Desk section.
-- Tighter section spacing and more information per viewport.
-- Stronger hover states for latest and trending stories.
-- Enhanced dark pinned editorial rail with richer image treatment.
-- A more dimensional newsletter close with restrained gradient/orbit details.
-- Mobile-specific reductions so the motion/details remain readable and performant.
+- ✅ Work phase-by-phase; do not implement future phases accidentally.
+- ✅ Preserve the V2 visual identity and reusable component architecture.
+- ✅ Keep server authorization and publishing rules out of client-only logic.
+- ✅ External stories enter Content Radar; they do not auto-publish.
+- ✅ AI output remains editable and human-approved.
+- ✅ Add loading, empty, error and reduced-motion states.
+- ✅ Validate inputs and keep secrets server-side.
+- ❌ Do not commit `.env`, API keys or provider secrets.
+- ❌ Do not introduce a provider response shape directly throughout UI/domain models.
+- ❌ Do not mark a phase complete only because its UI exists.
 
-All new home-specific pieces remain colocated under `src/screens/Home/components` so the reusable architecture stays intact.
+### 📚 Documentation is part of the feature
+
+**Every contributor and coding agent must update docs in the same change when behavior changes.**
+
+| Change | Documentation to update |
+|---|---|
+| Setup command / env var / route / workflow | `README.md` |
+| Product scope or user behavior | `docs/PRD.md` |
+| Architecture, provider, data flow or security decision | `docs/ARCHITECTURE.md` |
+| Phase progress/completion | `docs/ROADMAP.md` + README status table |
+
+The root README should remain **visual, friendly and quick to navigate**. Put detailed engineering discussion in `docs/` instead of turning the README into a wall of text.
+
+---
+
+## ✅ Definition of done
+
+A feature/phase is done only when its behavior works end-to-end, relevant security is enforced, important edge states are handled, verification passes, no secrets are committed, and documentation reflects reality.
+
+For complete phase exit criteria see [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
+---
+
+<div align="center">
+
+### The Living Journal
+
+**Minimal, not empty. Editorial, not generic. Automated where useful, human where it matters.**
+
+`V2 → Production Foundation → CMS → Radar → AI → Distribution → Revenue`
+
+</div>
