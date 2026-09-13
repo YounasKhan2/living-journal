@@ -3,12 +3,12 @@
 import { ArrowUpRight, MagnifyingGlass } from 'phosphor-react'
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useContent } from '../../context/ContentContext'
+import type { Post } from '../../types/content'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 
-export function SearchScreen() {
+export function SearchScreen({ posts }: { posts: Post[] }) {
   useDocumentTitle('Search')
-  const { publishedPosts } = useContent()
+  const publishedPosts = posts
   const [query, setQuery] = useState('')
   const results = useMemo(() => {
     const term = query.trim().toLowerCase()
