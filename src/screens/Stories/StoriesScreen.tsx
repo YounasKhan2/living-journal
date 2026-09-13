@@ -1,13 +1,13 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useContent } from '../../context/ContentContext'
+import type { Post } from '../../types/content'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { StoriesGrid } from './components/StoriesGrid'
 
-export function StoriesScreen() {
+export function StoriesScreen({ posts }: { posts: Post[] }) {
   useDocumentTitle('Stories')
-  const { publishedPosts } = useContent()
+  const publishedPosts = posts
   const [filter, setFilter] = useState('All')
   const filters = ['All', ...Array.from(new Set(publishedPosts.map(post => post.category)))]
   const visible = useMemo(() => filter === 'All' ? publishedPosts : publishedPosts.filter(post => post.category === filter), [filter, publishedPosts])
