@@ -127,8 +127,10 @@ export async function listPostRevisions(id: string) {
 }
 
 export async function restorePostRevision(id: string, revisionId: string) {
-  const response = await fetch(`/api/admin/posts/${encodeURIComponent(id)}/revisions/${encodeURIComponent(revisionId)}/restore`, {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(id)}/revisions`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ revisionId }),
   })
   const payload = await parseResponse<{ post: Post }>(response)
   return payload.post
