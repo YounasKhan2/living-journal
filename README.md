@@ -10,8 +10,10 @@
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-7.10-2D3748?logo=prisma&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
+![BullMQ](https://img.shields.io/badge/BullMQ-Queue%20Boundary-f59e0b)
 ![GSAP](https://img.shields.io/badge/GSAP-Motion-88CE02)
-![Phase](https://img.shields.io/badge/Phase%200D-Verification%20Gate-f59e0b)
+![Phase](https://img.shields.io/badge/Phase%200E-Verification%20Gate-f59e0b)
 
 A premium editorial experience evolving into a production publishing platform for **AI, software, startups, products, careers, business and future technology**.
 
@@ -37,8 +39,8 @@ The product is deliberately **not** an autonomous news scraper. Original publish
 | 0A — Freeze V2.1 | ✅ Complete |
 | 0B — Next.js App Router | ✅ Complete |
 | 0C — GSAP + SSR/client verification | ✅ Passed locally |
-| 0D — PostgreSQL + Prisma foundation | 🟡 Implemented; fresh-DB verification now |
-| 0E — Redis/queue boundary | ⬜ Planned |
+| 0D — PostgreSQL + Prisma foundation | ✅ Passed locally |
+| 0E — Redis/BullMQ boundary | 🟡 Implemented; local verification now |
 | 0F — CI + reproducible setup | ⬜ Planned |
 | 0G — final regression QA | ⬜ Planned |
 | Phase 1 — Auth/RBAC | ⬜ Planned |
@@ -48,37 +50,34 @@ Detailed gates: [`docs/PHASE-0-MIGRATION-PLAN.md`](docs/PHASE-0-MIGRATION-PLAN.m
 
 ---
 
-## 🗄️ Phase 0D — database foundation
+## 🧱 Production foundation
 
-The repository now includes a deliberately small production data foundation:
-
-```text
-PostgreSQL 16
-     ↓
-Prisma ORM 7.10 (pinned)
-     ↓
-@prisma/adapter-pg
-     ↓
-server-only Prisma client
-     ↓
-Next.js server routes/services
+```mermaid
+flowchart TB
+  Public[Public Publication] --> Next[Next.js App Router]
+  CMS[Admin CMS - later] --> Next
+  Next --> Server[Server/Application Layer]
+  Server --> DB[(PostgreSQL + Prisma)]
+  Server --> Queue[BullMQ producer boundary]
+  Queue --> Redis[(Redis)]
+  Redis -. future .-> Workers[Durable workers]
+  Workers -. later phases .-> DB
 ```
 
-### Added
+### Database ✅
 
-- `prisma/schema.prisma`
-- `prisma.config.ts`
-- committed initial migration
-- explicit Prisma seed
-- server-only environment validation with Zod
-- server-only Prisma singleton
-- `GET /api/health/database`
-- optional local PostgreSQL service in `compose.yaml`
-- database scripts in `package.json`
+PostgreSQL 16 + Prisma 7.10 are verified locally. The deliberately tiny `SystemSetting` model proves migration, seed and server connectivity without prematurely implementing Auth/CMS models.
 
-### Why the schema is tiny
+### Queue boundary 🟡
 
-Only `SystemSetting` exists in Phase 0. It proves migrations, JSONB, Prisma generation, seeding and server-side connectivity **without prematurely implementing Auth or CMS models**.
+Phase 0E adds Redis 7, `ioredis`, BullMQ contracts and a producer factory. It intentionally adds **no workers and no fake product jobs**. Future phases own the real workloads:
+
+| Queue | Owning future workflow |
+|---|---|
+| `content-ingestion` | Phase 3 Content Radar |
+| `scheduled-publish` | Production CMS publishing lifecycle |
+| `newsletter-send` | Phase 6 Audience/newsletter |
+| `ai-background` | Phase 4 AI Editorial Copilot |
 
 ---
 
@@ -94,13 +93,17 @@ src/
 ├── app/
 │   ├── (public)/
 │   ├── admin/
-│   └── api/
-│       └── health/
-│           ├── route.ts
-│           └── database/route.ts
+│   └── api/health/
+│       ├── route.ts
+│       ├── database/route.ts
+│       └── redis/route.ts
 ├── server/
 │   ├── env.ts
-│   └── db/prisma.ts
+│   ├── db/prisma.ts
+│   ├── redis/client.ts
+│   └── jobs/
+│       ├── contracts.ts
+│       └── queue.ts
 ├── screens/
 ├── components/
 └── styles/
@@ -123,7 +126,7 @@ The V2.1 visual layer remains frozen while infrastructure work continues.
 
 - Node.js 20+
 - npm
-- Docker Desktop **or** your own PostgreSQL instance
+- Docker Desktop **or** your own PostgreSQL + Redis instances
 
 ### 1. Pull and install
 
@@ -132,30 +135,38 @@ git pull origin main
 npm install
 ```
 
-### 2. Create environment file
+### 2. Create environment file on a fresh clone
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Default local value:
+If `.env` already exists, **do not overwrite it**. Add any new variables from `.env.example` manually.
+
+Default local infrastructure values:
 
 ```text
-DATABASE_URL=postgresql://living_journal:living_journal@localhost:5432/living_journal?schema=public
+DATABASE_URL=postgresql://living_journal:living_journal@localhost:5433/living_journal?schema=public
+REDIS_URL=redis://localhost:6380
 ```
 
 Never commit `.env`.
 
-### 3. Start PostgreSQL
-
-With Docker:
+### 3. Start local infrastructure
 
 ```powershell
-docker compose up -d postgres
+docker compose up -d postgres redis
 docker compose ps
 ```
 
-If you already run PostgreSQL yourself, skip Docker and update `DATABASE_URL`.
+Expected host mappings:
+
+```text
+PostgreSQL  localhost:5433 → container:5432
+Redis       localhost:6380 → container:6379
+```
+
+If you run either service yourself, update the corresponding environment URL instead.
 
 ### 4. Verify Prisma + database
 
@@ -186,16 +197,10 @@ Open:
 http://localhost:3000
 http://localhost:3000/api/health
 http://localhost:3000/api/health/database
+http://localhost:3000/api/health/redis
 ```
 
-Expected DB health response is HTTP **200** and includes:
-
-```json
-{
-  "status": "ok",
-  "dependency": "postgresql"
-}
-```
+Expected dependency health responses are HTTP **200** with `dependency: "postgresql"` and `dependency: "redis"` respectively.
 
 ---
 
@@ -214,34 +219,15 @@ Expected DB health response is HTTP **200** and includes:
 
 ---
 
-## 🌐 Runtime routes
-
-Public/editorial routes remain unchanged from V2.1/Next migration. Runtime checks now include:
+## 🌐 Runtime health routes
 
 ```text
 GET /api/health
 GET /api/health/database
+GET /api/health/redis
 ```
 
-The second endpoint intentionally returns **503** if PostgreSQL is unavailable; it does not leak credentials or raw errors to clients.
-
----
-
-## 🧱 Accepted architecture
-
-```mermaid
-flowchart TB
-  Public[Public Publication] --> Next[Next.js App Router]
-  CMS[Admin CMS] --> Next
-  Next --> Server[Server/Application Layer]
-  Server --> DB[(PostgreSQL + Prisma)]
-  Server --> Storage[(Object Storage - later)]
-  Server --> Redis[(Redis / BullMQ - Phase 0E+)]
-  Sources[RSS / APIs - later] --> Workers[Workers]
-  Workers --> DB
-```
-
-We are intentionally **not** running a separate NestJS service at this stage. See [`ADR-001`](docs/adr/ADR-001-nextjs-production-architecture.md).
+Dependency endpoints return **503** when unavailable and do not expose connection strings or raw errors to clients.
 
 ---
 
@@ -259,9 +245,10 @@ Non-negotiables:
 
 - preserve V2.1 visual behavior during Phase 0;
 - keep browser APIs in client boundaries;
-- keep database/provider/secrets server-side;
+- keep database/Redis/provider credentials server-side;
 - never commit `.env` or provider credentials;
-- do not add User/Post/Auth/CMS models during Phase 0D;
+- do not implement User/Auth/Post/CMS models during infrastructure-only subphases;
+- do not enqueue jobs before their owning feature has a real worker and idempotency design;
 - do not implement Phase 1+ features early;
 - update README/docs whenever setup, architecture, workflow or phase status changes;
 - never call a phase complete before its verification gate passes.
@@ -274,6 +261,6 @@ Non-negotiables:
 
 **Minimal, not empty. Editorial, not generic. Automated where useful, human where it matters.**
 
-`V2.1 ✅ → Next.js ✅ → SSR/GSAP ✅ → PostgreSQL/Prisma 🟡 → Queue → CI → QA → Auth`
+`V2.1 ✅ → Next.js ✅ → PostgreSQL/Prisma ✅ → Redis/BullMQ 🟡 → CI → QA → Auth`
 
 </div>
