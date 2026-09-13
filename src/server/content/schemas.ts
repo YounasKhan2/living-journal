@@ -28,6 +28,7 @@ export const postInputSchema = z.object({
   authorName: z.string().min(1).max(160),
   readTime: z.string().min(1).max(80),
   coverImageUrl: z.string().url().max(2048).nullable().optional(),
+  coverMediaId: z.string().min(1).max(191).nullable().optional(),
   featured: z.boolean().default(false),
   trending: z.boolean().default(false),
   seoTitle: z.string().max(300).nullable().optional(),
