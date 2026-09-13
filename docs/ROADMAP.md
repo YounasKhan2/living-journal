@@ -8,9 +8,9 @@
 
 The accepted V2.1 experience remains frozen during Phase 0: reusable screens/components, premium editorial styling, GSAP motion, public/internal routes and local demo publishing behavior.
 
-### ✅ Next.js runtime verified
+### ✅ Next.js + database foundation verified
 
-The project owner locally verified the migrated Next.js build/runtime after Phase 0B/0C. Database foundation work is now active.
+The project owner locally verified the migrated Next.js build/runtime and PostgreSQL/Prisma connectivity, including the database health endpoint.
 
 ---
 
@@ -20,7 +20,7 @@ The project owner locally verified the migrated Next.js build/runtime after Phas
 ### Architecture decisions ✅
 - Next.js App Router accepted via ADR-001.
 - PostgreSQL + Prisma selected as canonical data foundation.
-- Redis/BullMQ reserved for durable jobs.
+- Redis/BullMQ selected for durable background-job infrastructure.
 - No separate NestJS service initially.
 
 ### Execution status
@@ -28,8 +28,8 @@ The project owner locally verified the migrated Next.js build/runtime after Phas
 - ✅ **0A — V2.1 baseline frozen.**
 - ✅ **0B — Next.js App Router migration.**
 - ✅ **0C — GSAP/browser/SSR stabilization verified locally.**
-- 🟡 **0D — PostgreSQL + Prisma + environment validation implemented.** Prisma 7.10 is pinned, PostgreSQL adapter/config/schema/migration/seed/server client/env validation/DB-health endpoint and optional local Compose database are in `main`; fresh-DB verification remains.
-- ⬜ **0E — Redis/queue boundary.**
+- ✅ **0D — PostgreSQL + Prisma + environment validation verified locally.** Migration/seed/connectivity and `/api/health/database` passed.
+- 🟡 **0E — Redis/BullMQ boundary implemented; local verification required.** Redis Compose service, typed env validation, server-only client, reserved queue/job contracts, producer factory and `/api/health/redis` are in `main`. No product workers/jobs exist yet.
 - ⬜ **0F — CI + reproducible developer setup.**
 - ⬜ **0G — Full visual/manual regression audit.**
 
@@ -42,6 +42,7 @@ Detailed gates: [`PHASE-0-MIGRATION-PLAN.md`](PHASE-0-MIGRATION-PLAN.md).
 - visual/motion behavior is preserved;
 - no hydration/browser-only runtime warnings;
 - PostgreSQL migration + seed + DB health check succeed;
+- Redis health check succeeds and BullMQ producer boundary typechecks;
 - lint/test/build/typecheck CI baseline is green;
 - documentation describes reality;
 - no Phase 1+ feature is falsely claimed complete.
