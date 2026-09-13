@@ -12,7 +12,7 @@
 ![Prisma](https://img.shields.io/badge/Prisma-7.10-2D3748?logo=prisma&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
 ![BullMQ](https://img.shields.io/badge/BullMQ-Queue%20Boundary-f59e0b)
-![CI](https://img.shields.io/badge/CI-Verification%20Gate-f59e0b?logo=githubactions)
+![CI](https://img.shields.io/badge/CI-Local%20Gate%20Passed-22c55e?logo=githubactions)
 ![GSAP](https://img.shields.io/badge/GSAP-Motion-88CE02)
 
 A premium editorial experience evolving into a production publishing platform for **AI, software, startups, products, careers, business and future technology**.
@@ -29,20 +29,6 @@ A premium editorial experience evolving into a production publishing platform fo
 
 The Living Journal is deliberately **not** an autonomous news scraper. Original publishing remains first-class; future RSS/API items enter a Content Radar and AI remains an editorial assistant.
 
-```mermaid
-flowchart LR
-  Sources[RSS / Approved APIs] --> Radar[Content Radar]
-  Manual[Original Story] --> Draft[Editorial Draft]
-  Radar --> Research[Research]
-  Research --> AI[AI Assistance]
-  AI --> Draft
-  Draft --> Review[Human Review]
-  Review --> Publish[Publish / Schedule]
-  Publish --> Web[Website + SEO]
-  Publish --> Newsletter[Newsletter]
-  Web --> Revenue[Ads / Affiliate / Sponsors]
-```
-
 ---
 
 ## 🚦 Current status
@@ -55,7 +41,7 @@ flowchart LR
 | 0C — GSAP + SSR/client verification | ✅ Passed locally |
 | 0D — PostgreSQL + Prisma | ✅ Passed locally |
 | 0E — Redis/BullMQ boundary | ✅ Passed locally |
-| 0F — CI + developer workflow | 🟡 Implemented; verification + lockfile sync |
+| 0F — CI + developer workflow | 🟡 Local gate passed; hosted Actions still needs a green run |
 | 0G — final regression QA | ⬜ Planned |
 | Phase 1 — Auth/RBAC | ⬜ Planned |
 | Phase 2 — Production CMS | ⬜ Planned |
@@ -97,7 +83,7 @@ Redis 7 + BullMQ are verified locally. Phase 0 defines the connection/producer c
 
 ## 🔁 Quality workflow
 
-Phase 0F adds one consistent verification path for humans, coding agents and GitHub Actions:
+Phase 0F provides one consistent verification path for humans, coding agents and GitHub Actions:
 
 ```text
 Prisma schema validation
@@ -117,29 +103,9 @@ Run everything locally with:
 npm run verify
 ```
 
-Or individually:
+The local gate is verified: lint completed with **0 errors**, typecheck passed, all baseline tests passed and the production Next.js build completed successfully. Existing image-optimization/hook findings remain warnings and are tracked for cleanup rather than hidden.
 
-```powershell
-npm run db:validate
-npm run lint
-npm run typecheck
-npm run test
-npm run build
-```
-
-GitHub Actions also provisions isolated **PostgreSQL 16 + Redis 7** services, applies the committed migration + seed, then performs the same code-quality/build checks.
-
-### ⚠️ Temporary lockfile gate
-
-The committed `package-lock.json` is still from the original Vite-era prototype. The current CI therefore uses:
-
-```text
-npm install
-```
-
-instead of `npm ci`.
-
-After pulling Phase 0F, your local `npm install` will regenerate the lockfile from the current Next.js/Prisma/Redis/ESLint dependency graph. Once that refreshed lockfile is committed, CI will be switched to deterministic `npm ci`. **0F is not marked complete until this is done.**
+GitHub Actions provisions isolated **PostgreSQL 16 + Redis 7** services, applies the committed migration + seed, and uses deterministic `npm ci` before running the same checks.
 
 ---
 
@@ -201,7 +167,7 @@ The V2.1 visual layer remains frozen while infrastructure work continues.
 
 ```powershell
 git pull origin main
-npm install
+npm ci
 ```
 
 ### 2. Environment
