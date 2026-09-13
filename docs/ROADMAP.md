@@ -1,55 +1,88 @@
 # 🗺️ The Living Journal — Production Roadmap
 
-> **Rule:** Complete and verify one phase before expanding the next. A UI existing does not mean a production phase is done.
+> **Rule:** Complete and verify one phase before expanding the next. Implementation may advance ahead of manual verification when explicitly authorized, but no phase is marked complete until its exit gate passes.
 
 ## Current baseline
 
 ### ✅ V2.1 — Stable editorial visual baseline
 
-The accepted V2.1 experience remains intact: reusable screens/components, premium editorial styling, GSAP motion, public/internal routes and local demo publishing behavior.
+The accepted V2.1 experience remains intact: reusable screens/components, premium editorial styling, GSAP motion, public/internal routes and the publication's visual identity.
 
 ### ✅ Phase 0 — Production foundation complete
 
-The project owner has locally verified the Next.js/GSAP/SSR migration, PostgreSQL/Prisma, Redis/BullMQ, deterministic developer verification and the final visual/manual regression pass.
+The project owner locally verified the Next.js/GSAP/SSR migration, PostgreSQL/Prisma, Redis/BullMQ foundation, deterministic developer verification and final visual/manual regression pass.
 
 ---
 
 ## Phase 0 — Next.js migration & production foundation
 **Status:** ✅ COMPLETE
 
-### Architecture decisions ✅
-- Next.js App Router accepted via ADR-001.
-- PostgreSQL + Prisma selected as canonical data foundation.
-- Redis/BullMQ selected for durable background-job infrastructure.
-- No separate NestJS service initially.
-
-### Execution status
-
-- ✅ **0A — V2.1 baseline frozen.**
-- ✅ **0B — Next.js App Router migration.**
-- ✅ **0C — GSAP/browser/SSR stabilization verified locally.**
-- ✅ **0D — PostgreSQL + Prisma + environment validation verified locally.**
-- ✅ **0E — Redis/BullMQ boundary verified locally.**
-- ✅ **0F — Reproducible developer verification complete.** Current lockfile is committed; `npm ci` is available and `npm run verify` passed locally end-to-end. Hosted GitHub Actions is intentionally not required because the account cannot run Actions without billing.
-- ✅ **0G — Full visual/manual regression audit verified by the project owner.** Public/admin routes, responsive behavior, navigation/interactions, V2.1 visual preservation and browser smoke checks passed.
+- ✅ 0A — V2.1 baseline frozen.
+- ✅ 0B — Next.js App Router migration.
+- ✅ 0C — GSAP/browser/SSR stabilization verified locally.
+- ✅ 0D — PostgreSQL + Prisma verified locally.
+- ✅ 0E — Redis/BullMQ boundary verified locally.
+- ✅ 0F — Reproducible developer verification complete.
+- ✅ 0G — Full visual/manual regression audit verified.
 
 Detailed Phase 0 record: [`PHASE-0-MIGRATION-PLAN.md`](PHASE-0-MIGRATION-PLAN.md) and [`PHASE-0G-QA.md`](PHASE-0G-QA.md).
 
 ---
 
 ## Phase 1 — Authentication & RBAC
-**Status:** 🟡 CURRENT
+**Status:** 🟡 IMPLEMENTED — FINAL SECURITY MATRIX VERIFICATION PENDING
 
-Secure admin login/logout/session, `ADMIN`/`EDITOR`, server authorization, bootstrap-first-admin, protected routes and auth rate limiting.
+Implemented:
+- email/password login and logout;
+- Argon2id password hashing;
+- opaque hashed PostgreSQL sessions;
+- HttpOnly secure-cookie policy;
+- protected `/admin/**` boundary;
+- centralized `ADMIN` / `EDITOR` capabilities;
+- ADMIN-only settings enforcement;
+- first-admin bootstrap command;
+- Redis login throttling;
+- same-origin mutation protection;
+- privacy-minimized auth audit records;
+- auth-focused tests and editorial login UI.
 
-**Exit:** anonymous protected access is blocked and role tests pass.
+Still required before Phase 1 is marked complete:
+- explicit EDITOR account matrix verification;
+- direct ADMIN-only endpoint denial check;
+- expired/revoked/disabled-session checks;
+- final auth regression plus `npm run verify` after the latest code batch.
+
+Detailed plan: [`PHASE-1-AUTH-PLAN.md`](PHASE-1-AUTH-PLAN.md).
+
+---
 
 ## Phase 2 — Production CMS & media
-**Status:** ⬜ Planned
+**Status:** 🟡 IN PROGRESS — CORE WORKFLOW IMPLEMENTED
 
-Persistent content domain, lifecycle, structured editor, autosave/preview/revisions, media storage and public pages backed by canonical database content.
+Implemented:
+- durable PostgreSQL content models and imported seed stories;
+- authenticated CMS APIs;
+- draft/edit/review/schedule/publish/archive lifecycle;
+- public DB-backed homepage/archive/category/search/story reads;
+- canonical story metadata;
+- immutable revision history and restore-as-new-draft;
+- dirty-state autosave and browser unsaved-change protection;
+- authenticated noindex editorial preview;
+- BullMQ delayed scheduled-publish jobs plus worker/reconciliation process;
+- Cloudinary media adapter, upload endpoint, durable `MediaAsset` metadata and cover-image upload UI.
 
-**Exit:** editor can create, review, schedule and publish durable content end-to-end.
+Remaining Phase 2 gate:
+- configure Cloudinary credentials and verify real upload;
+- run/deploy and verify the scheduled publishing worker;
+- full ADMIN/EDITOR publishing regression;
+- direct endpoint/public visibility checks;
+- final responsive/metadata/revision/autosave regression;
+- `npm run verify` after latest CMS work;
+- documentation closure.
+
+Detailed plan: [`PHASE-2-CMS-PLAN.md`](PHASE-2-CMS-PLAN.md).
+
+---
 
 ## Phase 3 — Content Radar & ingestion
 **Status:** ⬜ Planned
