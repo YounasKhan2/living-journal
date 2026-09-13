@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { seedPosts } from '../content/seedPosts'
 import type { Post } from '../types/content'
 
@@ -49,29 +49,40 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     setSubscribers(readStoredSubscribers())
   }, [])
 
-  const persistPosts = (next: Post[]) => {
-    setPosts(next)
-    try { window.localStorage.setItem(POSTS_KEY, JSON.stringify(next)) } catch { /* demo storage may be unavailable */ }
-  }
+  const persistPosts = useCallback((getNext: (current: Post[]) => Post[]) => {
+    setPosts(current => {
+      const next = getNext(current)
+      try { window.localStorage.setItem(POSTS_KEY, JSON.stringify(next)) } catch { /* demo storage may be unavailable */ }
+      return next
+    })
+  }, [])
 
-  const createPost = (post: Post) => persistPosts([post, ...posts])
-  const updatePost = (post: Post) => persistPosts(posts.map(item => item.id === post.id ? post : item))
-  const deletePost = (id: string) => persistPosts(posts.filter(item => item.id !== id))
+  const createPost = useCallback((post: Post) => {
+    persistPosts(current => [post, ...current])
+  }, [persistPosts])
 
-  const subscribe = (email: string) => {
+  const updatePost = useCallback((post: Post) => {
+    persistPosts(current => current.map(item => item.id === post.id ? post : item))
+  }, [persistPosts])
+
+  const deletePost = useCallback((id: string) => {
+    persistPosts(current => current.filter(item => item.id !== id))
+  }, [persistPosts])
+
+  const subscribe = useCallback((email: string) => {
     const normalized = email.trim().toLowerCase()
     if (!normalized || subscribers.includes(normalized)) return false
     const next = [...subscribers, normalized]
     setSubscribers(next)
     try { window.localStorage.setItem(SUBSCRIBERS_KEY, JSON.stringify(next)) } catch { /* demo storage may be unavailable */ }
     return true
-  }
+  }, [subscribers])
 
-  const resetDemoContent = () => {
-    persistPosts(seedPosts)
+  const resetDemoContent = useCallback(() => {
+    persistPosts(() => seedPosts)
     setSubscribers([])
     try { window.localStorage.removeItem(SUBSCRIBERS_KEY) } catch { /* demo storage may be unavailable */ }
-  }
+  }, [persistPosts])
 
   const value = useMemo<ContentContextValue>(() => ({
     posts,
@@ -82,7 +93,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     deletePost,
     subscribe,
     resetDemoContent,
-  }), [posts, subscribers])
+  }), [posts, subscribers, createPost, updatePost, deletePost, subscribe, resetDemoContent])
 
   return <ContentContext.Provider value={value}>{children}</ContentContext.Provider>
 }
