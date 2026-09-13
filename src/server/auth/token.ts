@@ -1,5 +1,3 @@
-import 'server-only'
-
 import { createHash, randomBytes } from 'node:crypto'
 import { AUTH_SESSION_TOKEN_BYTES, AUTH_SESSION_TTL_HOURS } from './constants'
 
