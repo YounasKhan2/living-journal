@@ -8,14 +8,14 @@
 
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)
 ![GSAP](https://img.shields.io/badge/GSAP-Motion-88CE02)
-![UI](https://img.shields.io/badge/V2%20UI-Recovered-2ea44f)
-![Next](https://img.shields.io/badge/Next-Production%20Foundation-f59e0b)
+![UI](https://img.shields.io/badge/V2.1-Stable-2ea44f)
+![Phase](https://img.shields.io/badge/Phase%200-In%20Progress-f59e0b)
+![Architecture](https://img.shields.io/badge/Target-Next.js-black?logo=next.js)
 
 A reusable Awwwards-inspired editorial frontend evolving into a production publishing platform for **AI, software, startups, products, careers, business and future technology**.
 
-[Product Requirements](docs/PRD.md) · [Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md)
+[Product Requirements](docs/PRD.md) · [Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md) · [ADR-001](docs/adr/ADR-001-nextjs-production-architecture.md) · [Phase 0 Plan](docs/PHASE-0-MIGRATION-PLAN.md)
 
 </div>
 
@@ -48,8 +48,8 @@ flowchart LR
 | Phase | Scope | Status |
 |---|---|---|
 | V2 | Reusable editorial frontend + GSAP visual system | ✅ Complete |
-| V2.1 | UI recovery, responsive/internal-page polish | ✅ Complete |
-| Phase 0 | Architecture decision + DB/infrastructure/CI | ⏭️ Next |
+| V2.1 | UI recovery, responsive/internal-page polish | ✅ Stable baseline |
+| Phase 0 | **Next.js migration + production foundation** | 🟡 In progress |
 | Phase 1 | Authentication + RBAC | ⬜ Planned |
 | Phase 2 | Production CMS + media | ⬜ Planned |
 | Phase 3 | Content Radar + RSS/API ingestion | ⬜ Planned |
@@ -59,60 +59,109 @@ flowchart LR
 | Phase 7 | Monetization | ⬜ Planned |
 | Phase 8 | Analytics + hardening + launch | ⬜ Planned |
 
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) for phase exit criteria.
+### ✅ Phase 0 architecture decision is locked
+
+We accepted [`ADR-001`](docs/adr/ADR-001-nextjs-production-architecture.md):
+
+```text
+Next.js App Router
+      ↓
+React + TypeScript
+      ↓
+Server/Application Modules
+      ↓
+PostgreSQL + Prisma
+      ↓
+Redis + BullMQ when durable jobs arrive
+```
+
+We are **not** adding a separate NestJS service in the initial production architecture. If future scale/team boundaries justify service extraction, that requires a new ADR.
+
+The exact migration order and gates live in [`docs/PHASE-0-MIGRATION-PLAN.md`](docs/PHASE-0-MIGRATION-PLAN.md).
 
 ---
 
-## 🎨 V2.1 UI recovery
+## 🎨 V2.1 — visual baseline
 
-The first GitHub push did not carry the complete visual styling from the working V2 source, which left the landing/internal routes visually incomplete and could produce a broken-looking page. V2.1 fixes that baseline before backend work begins.
+V2.1 is now the frontend reference that Phase 0 must preserve.
 
-### What was fixed
+- ✅ Layered editorial landing page.
+- ✅ Responsive header + mobile navigation.
+- ✅ GSAP hero parallax, ticker and reveal motion.
+- ✅ Stories, Categories, Story Detail and Search.
+- ✅ Newsletter, About, Contact, Advertise, Legal and 404.
+- ✅ Admin dashboard/posts/editor/audience/settings demo UI.
+- ✅ Mobile/narrow layouts.
+- ✅ Safe demo `localStorage` behavior.
+- ✅ `prefers-reduced-motion` support.
 
-- ✅ Restored the layered editorial canvas instead of a flat/empty page.
-- ✅ Rebuilt responsive header + working full-screen mobile navigation styling.
-- ✅ Stabilized GSAP setup and removed the fragile full-page pinned rail behavior.
-- ✅ Restored hero parallax, ticker motion, reveal motion and editorial media motion.
-- ✅ Added complete styling for Stories, Category, Story Detail and Search.
-- ✅ Added complete styling for Newsletter, About, Contact, Advertise, Legal and 404.
-- ✅ Recovered detailed admin tables/forms/layout styling.
-- ✅ Added small-screen layouts down to narrow mobile widths.
-- ✅ Made demo `localStorage` access fail-safe so storage restrictions do not blank the app.
-- ✅ Preserved `prefers-reduced-motion` behavior.
-
-### Styling files
+### Styling baseline
 
 ```text
 src/styles/
-├── tokens.css      # colors, typography, spacing tokens
-├── global.css      # original structural/base rules
-└── polish.css      # V2.1 recovery + detailed route/responsive styling
+├── tokens.css      # design tokens
+├── global.css      # structural/base rules
+└── polish.css      # V2.1 detailed route/responsive styling
 ```
 
-`polish.css` intentionally loads **after** the base styles. Once Phase 0 starts, we can consolidate these files carefully after visual regression checks instead of doing a risky rewrite now.
+**Phase 0 rule:** do not redesign these surfaces while migrating the runtime. Any visual change must be a compatibility fix or separately approved improvement.
 
 ---
 
-## 🧩 Current experience
+## 🧱 Accepted production architecture
 
-The application currently includes:
+```mermaid
+flowchart TB
+  Public[Public Publication] --> Next[Next.js App Router]
+  CMS[Admin CMS] --> Next
+  Next --> Server[Server/Application Layer]
+  Server --> DB[(PostgreSQL)]
+  Server --> Storage[(Object Storage)]
+  Server --> Redis[(Redis)]
+  Sources[RSS / Approved APIs] --> Workers[Background Workers]
+  Workers --> DB
+  CMS --> AI[AI Provider Adapter]
+  Server --> Email[Newsletter Adapter]
+```
 
-- Layered editorial homepage with warm stone, sage and periwinkle surfaces.
-- GSAP hero parallax, signal ticker, reveal choreography and editorial storytelling.
-- Story archive and category filtering.
-- Story detail reading progress and related stories.
-- Search.
-- Newsletter landing/signup demo.
-- About, contact, advertising and legal pages.
-- Responsive mobile menu.
-- Local demo publisher/admin screens.
-- Starter robots, sitemap and RSS assets.
+### Why this direction
 
-> **V2 boundary:** publishing and subscribers still use browser `localStorage`. This is a frontend demo, not yet a secure multi-user CMS.
+- Stronger SEO/crawlable article rendering.
+- Dynamic metadata, sitemap and RSS fit naturally.
+- Existing React components remain reusable.
+- One application boundary keeps early production simpler.
+- Server-side auth/data/provider code can stay isolated from client code.
+- Background workers can still run separately when BullMQ arrives.
+
+Deep details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ---
 
-## 🗂️ Structure
+## 🚧 Phase 0 migration sequence
+
+```text
+0A Freeze V2.1 baseline
+        ↓
+0B Migrate routes/runtime to Next.js
+        ↓
+0C Stabilize GSAP + client/SSR boundaries
+        ↓
+0D Add PostgreSQL + Prisma + env validation
+        ↓
+0E Confirm Redis/queue boundary
+        ↓
+0F Add CI + reproducible setup
+        ↓
+0G Visual/manual regression QA
+        ↓
+Phase 0 complete
+```
+
+Phase 0 intentionally does **not** add auth, CMS persistence, Content Radar, AI, newsletters or monetization. Those remain separate roadmap phases.
+
+---
+
+## 🗂️ Current repository
 
 ```text
 src/
@@ -143,16 +192,19 @@ src/
 └── utils/
 
 docs/
+├── adr/
+│   └── ADR-001-nextjs-production-architecture.md
 ├── PRD.md
 ├── ARCHITECTURE.md
-└── ROADMAP.md
+├── ROADMAP.md
+└── PHASE-0-MIGRATION-PLAN.md
 ```
 
-Screen-specific components remain colocated with their screen. Shared site primitives stay under `components/global`.
+During migration, existing screens/components should be reused rather than rewritten only to look more "Next-like".
 
 ---
 
-## 🌐 Routes
+## 🌐 Current V2.1 routes
 
 ### Public
 
@@ -180,11 +232,11 @@ Screen-specific components remain colocated with their screen. Shared site primi
 | `/admin/audience` | Demo subscribers |
 | `/admin/settings` | Settings/demo reset |
 
-These admin routes are not authenticated until Phase 1.
+These admin routes are **not authenticated yet**. Authentication is Phase 1.
 
 ---
 
-## 🛠️ Run locally
+## 🛠️ Run the current V2.1 baseline
 
 Requirements: **Node.js 20+** and npm.
 
@@ -194,7 +246,7 @@ npm install
 npm run dev
 ```
 
-Production check:
+Current production check:
 
 ```bash
 npm run typecheck
@@ -202,49 +254,33 @@ npm run build
 npm run preview
 ```
 
-If you cloned before the V2.1 recovery, make sure you `git pull origin main` and restart Vite so the new `polish.css` import is loaded.
-
----
-
-## 🧱 Target production architecture
-
-```mermaid
-flowchart TB
-  Public[Public Publication] --> App[Application/API Layer]
-  CMS[Authenticated CMS] --> App
-  App --> DB[(PostgreSQL)]
-  App --> Storage[(Object Storage)]
-  App --> Redis[(Redis / Queue)]
-  Sources[RSS / Approved APIs] --> Workers[Ingestion Workers]
-  Workers --> DB
-  DB --> CMS
-  CMS --> AI[AI Provider Adapter]
-  App --> Email[Newsletter Adapter]
-```
-
-Phase 0 will formally decide between the recommended **Next.js production migration** and a separated **Vite + NestJS** architecture. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+> These commands will change as the active runtime moves from Vite to Next.js. Phase 0 implementation must update this section in the same change.
 
 ---
 
 ## 🤖 Contributor / AI-agent guide
 
-Before substantial work, read:
+Before substantial work, read in this order:
 
-1. [`docs/PRD.md`](docs/PRD.md) — what we are building.
-2. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system boundaries and workflows.
-3. [`docs/ROADMAP.md`](docs/ROADMAP.md) — what phase is allowed next.
+1. [`docs/PRD.md`](docs/PRD.md) — what the product is.
+2. [`docs/adr/ADR-001-nextjs-production-architecture.md`](docs/adr/ADR-001-nextjs-production-architecture.md) — architecture decision.
+3. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — production boundaries.
+4. [`docs/PHASE-0-MIGRATION-PLAN.md`](docs/PHASE-0-MIGRATION-PLAN.md) — current implementation order.
+5. [`docs/ROADMAP.md`](docs/ROADMAP.md) — phase gates.
 
 ### Rules
 
 - ✅ Work phase-by-phase.
-- ✅ Preserve the reusable screen/component architecture.
-- ✅ Preserve the warm editorial visual identity unless a deliberate redesign is approved.
-- ✅ External stories enter Content Radar; never auto-publish them.
+- ✅ Preserve V2.1 visual behavior during Phase 0.
+- ✅ Reuse existing React components before rewriting them.
+- ✅ Keep browser/GSAP code behind client boundaries.
+- ✅ Keep database/provider/secrets server-side.
+- ✅ External stories eventually enter Content Radar; never auto-publish them.
 - ✅ AI output remains editable and human-approved.
 - ✅ Add loading, empty, error, mobile and reduced-motion states.
-- ✅ Keep secrets and authorization server-side when backend work begins.
 - ❌ Never commit `.env`, API keys or secrets.
-- ❌ Do not mark a phase done because only its UI exists.
+- ❌ Do not implement Phase 1+ features during Phase 0.
+- ❌ Do not mark a phase done because its UI exists.
 
 ### 📚 Documentation is part of every feature
 
@@ -252,10 +288,11 @@ Before substantial work, read:
 |---|---|
 | Setup, env var, route, visible workflow | `README.md` |
 | Product scope / behavior | `docs/PRD.md` |
-| Architecture / provider / data flow / security | `docs/ARCHITECTURE.md` |
+| Architecture / provider / data/security | `docs/ARCHITECTURE.md` + ADR if needed |
+| Current Phase 0 execution | `docs/PHASE-0-MIGRATION-PLAN.md` |
 | Phase progress | `docs/ROADMAP.md` + README status |
 
-The root README should stay visual and easy to scan. Deep engineering details belong under `docs/`.
+The root README should stay colorful, friendly and quick to scan. Deep engineering detail belongs under `docs/`.
 
 ---
 
@@ -265,6 +302,6 @@ The root README should stay visual and easy to scan. Deep engineering details be
 
 **Minimal, not empty. Editorial, not generic. Automated where useful, human where it matters.**
 
-`V2.1 UI Recovery → Production Foundation → CMS → Radar → AI → Distribution → Revenue`
+`V2.1 Stable → Phase 0 Next.js Foundation → Auth → CMS → Radar → AI → Distribution → Revenue`
 
 </div>
