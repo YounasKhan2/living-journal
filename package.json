@@ -18,7 +18,8 @@
     "db:studio": "prisma studio",
     "db:validate": "prisma validate",
     "auth:bootstrap-admin": "tsx scripts/bootstrap-admin.ts",
-    "cms:import-seed": "tsx scripts/import-seed-posts.ts"
+    "cms:import-seed": "tsx scripts/import-seed-posts.ts",
+    "worker:scheduled-publish": "tsx scripts/scheduled-publish-worker.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
