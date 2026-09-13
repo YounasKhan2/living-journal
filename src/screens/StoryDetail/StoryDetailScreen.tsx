@@ -29,7 +29,7 @@ export function StoryDetailScreen({ post, related }: { post?: Post; related: Pos
     <div className="reading-progress" ref={progress}/>
     <header className="story-detail__hero page-gutter page-top">
       <div className="story-detail__head"><span className="eyebrow">{post.category}</span><h1>{post.title}</h1><p>{post.dek}</p><div className="story-meta"><span>{post.date}</span><span><Clock size={15}/> {post.readTime}</span><span>By {post.author}</span></div></div>
-      <div className="story-detail__cover">{post.image ? <img src={post.image} alt=""/> : null}</div>
+      <div className="story-detail__cover">{post.image ? <img src={post.image} alt={post.imageAlt || ''}/> : null}</div>
     </header>
     <ArticleBody sections={post.sections}/>
     <RelatedStories posts={related}/>
