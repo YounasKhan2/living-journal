@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import '../styles/tokens.css'
 import '../styles/global.css'
 import '../styles/polish.css'
+import '../styles/auth.css'
 import { ContentProvider } from '../context/ContentContext'
 
 export const metadata: Metadata = {
