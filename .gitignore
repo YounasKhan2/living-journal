@@ -6,6 +6,9 @@ node_modules/
 out/
 dist/
 
+# TypeScript incremental build metadata
+*.tsbuildinfo
+
 # Prisma generated client
 src/generated/prisma/
 
