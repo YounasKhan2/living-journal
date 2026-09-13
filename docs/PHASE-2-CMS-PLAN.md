@@ -4,7 +4,9 @@
 
 ## Status
 
-**⬜ PLANNED — implementation may proceed after Phase 1 code is in place; final Phase 1 verification remains required before Phase 2 is called complete.**
+**🟡 IN PROGRESS — core persistence, authorized CMS workflows, public DB reads, revision history, autosave, preview, scheduled publishing infrastructure and Cloudinary-backed media upload are implemented. Final verification/regression and deployment configuration remain.**
+
+Phase 1 authentication code is in place and working locally, but final ADMIN/EDITOR security-matrix verification must still be recorded before either phase is marked complete.
 
 ## Core principles
 
@@ -13,12 +15,12 @@
 - Public pages read only publishable canonical content.
 - Editorial revisions are immutable snapshots, not overwritten history.
 - Slug changes and publishing transitions are explicit application operations.
-- Media metadata is durable even when provider integration is staged.
+- Media metadata is durable and provider-backed.
 - The V2.1 visual language is preserved; Phase 2 changes data/workflow, not brand identity.
 
-## 2A — Content domain persistence
+## 2A — Content domain persistence ✅ IMPLEMENTED
 
-Add Prisma models/enums for:
+Implemented Prisma models/enums:
 
 - `Post`
 - `PostRevision`
@@ -28,39 +30,28 @@ Add Prisma models/enums for:
 - `MediaAsset`
 - `PostStatus`: `DRAFT`, `IN_REVIEW`, `SCHEDULED`, `PUBLISHED`, `ARCHIVED`
 
-Initial post fields cover the currently rendered/editor-managed contract:
+The content schema covers slug/title/dek/body JSON, author display metadata, category/tags, cover media, read time, featured/trending, SEO fields, publish/schedule timestamps and creator/updater attribution.
 
-- slug/title/dek/body JSON;
-- author display metadata until a dedicated AuthorProfile phase;
-- category;
-- cover image/media reference;
-- read time;
-- featured/trending;
-- SEO title/meta description;
-- published/scheduled timestamps;
-- creator/updater attribution.
+The production-content migration has already applied successfully in the project owner's local PostgreSQL environment and the six V2.1 seed stories were imported.
 
-**Gate:** migration applies cleanly and schema supports existing seed/demo story shape without lossy conversion.
+## 2B — Application/repository layer ✅ IMPLEMENTED
 
-## 2B — Application/repository layer
-
-Create server-only modules under `src/server/content/`:
+Server-only content modules now provide:
 
 - validation schemas;
 - public read queries;
 - CMS list/detail queries;
-- create/update draft services;
-- publication transition service;
-- revision snapshot service;
-- slug normalization/uniqueness handling.
+- create/update services;
+- controlled publication transitions;
+- revision snapshots and restore;
+- slug normalization/uniqueness handling;
+- media association validation.
 
-UI components must not import Prisma directly.
+UI components do not import Prisma directly.
 
-**Gate:** domain tests cover validation, status transitions and slug rules.
+## 2C — Authorized CMS mutations ✅ IMPLEMENTED
 
-## 2C — Authorized CMS mutations
-
-Expose server Route Handlers for admin UI needs, initially:
+Implemented authenticated endpoints include:
 
 ```text
 GET    /api/admin/posts
@@ -69,72 +60,117 @@ GET    /api/admin/posts/:id
 PATCH  /api/admin/posts/:id
 POST   /api/admin/posts/:id/transition
 DELETE /api/admin/posts/:id
+GET    /api/admin/posts/:id/revisions
+POST   /api/admin/posts/:id/revisions/:revisionId/restore
+POST   /api/admin/media
 ```
 
-Rules:
+Mutations use server-side session/capability authorization, same-origin protection, validated inputs and server-owned transition rules.
 
-- session required;
-- capability required (`content:write` or `content:publish`);
-- same-origin protection on mutations;
-- validated request bodies only;
-- generic server errors to clients;
-- revision created for meaningful saved changes;
-- transition rules enforced on server.
+## 2D — Admin UI migration ✅ CORE IMPLEMENTED
 
-## 2D — Admin UI migration
+The admin content experience is now API/database backed rather than localStorage backed for production posts.
 
-Replace localStorage post reads/writes with API-backed state while retaining existing screens/components.
-
-Required UX:
+Implemented UX:
 
 - loading/error/empty states;
-- create draft;
+- durable draft creation;
 - edit/save;
-- publish/review/schedule controls matching server state;
-- delete/archive confirmation;
-- no optimistic state that can silently diverge from server truth.
+- 12-second dirty-state autosave for persisted stories;
+- browser unsaved-change protection;
+- review/publish/schedule/archive workflow;
+- delete confirmation;
+- private saved-version preview;
+- revision history and immutable restore-as-new-draft behavior;
+- recent-content dashboard backed by PostgreSQL.
 
-Newsletter subscriber demo state may remain temporary until Phase 6.
+Newsletter subscriber demo state intentionally remains temporary until Phase 6.
 
-## 2E — Public canonical read path
+## 2E — Public canonical read path ✅ IMPLEMENTED
 
-Move public content to server-backed queries:
+Database-backed published content is used for:
 
 - homepage story sections;
 - `/stories`;
 - `/stories/[slug]`;
 - `/category/[slug]`;
-- related/trending queries;
+- search;
+- related/trending content;
 - story metadata generation.
 
-Only `PUBLISHED` content with valid publish timing is public.
+Only `PUBLISHED` rows with eligible publish timing are public.
 
-## 2F — Revisions and media foundation
+## 2F — Revisions, media, preview and scheduling 🟡 IMPLEMENTED / CONFIGURATION PENDING
 
-Revisions:
+### Revisions ✅
 
-- capture canonical snapshot on save/transition;
-- show revision history in admin;
-- support explicit restore through a new draft revision rather than mutating history.
+- canonical snapshots are created on save/transition;
+- revision history is visible in the editor;
+- restoring an older revision creates a new `DRAFT` revision rather than mutating history.
 
-Media foundation:
+### Preview ✅
 
-- persist provider/storage key, MIME type, size, dimensions, alt text and attribution;
-- provider access remains behind an adapter;
-- no browser blob URLs as durable assets.
+- `/preview/:id` is authenticated;
+- unpublished content can be reviewed using the public story presentation;
+- preview metadata is `noindex`, `nofollow`, `nocache`.
 
-A concrete object-storage provider must be selected before upload UI is called production-ready.
+### Autosave ✅
 
-## 2G — Phase 2 regression
+- persisted stories autosave after a dirty interval;
+- unsaved state is visible;
+- browser close/reload receives unsaved-change protection.
 
-- `npm run verify`;
-- DB migration/seed verification;
+### Scheduled publishing ✅ CODE IMPLEMENTED
+
+- scheduling creates an idempotent BullMQ delayed job;
+- unschedule/archive/restore paths cancel stale jobs;
+- `scripts/scheduled-publish-worker.ts` publishes due posts server-side;
+- worker startup and one-minute reconciliation recover scheduled rows that are missing Redis jobs;
+- run with `npm run worker:scheduled-publish`.
+
+Production deployment still needs a continuously running worker process alongside the Next.js application.
+
+### Media 🟡 CODE IMPLEMENTED / CREDENTIALS REQUIRED
+
+Cloudinary is the selected Phase 2 image-storage provider.
+
+Implemented:
+
+- authenticated image upload endpoint;
+- JPEG/PNG/WebP validation;
+- 10 MB size limit;
+- required alt text and optional attribution;
+- server-only signed Cloudinary upload;
+- durable `MediaAsset` metadata persistence;
+- cover-media relation on `Post`;
+- editor upload UI plus external-URL fallback.
+
+Required deployment/local configuration before uploads can succeed:
+
+```env
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+```
+
+These values must remain server-only.
+
+## 2G — Phase 2 regression ⬜ PENDING
+
+Still required before Phase 2 can be called complete:
+
+- `npm run verify` after the latest CMS batch;
+- run `npm run worker:scheduled-publish` and test a real scheduled publication;
+- configure Cloudinary and test a real upload;
 - ADMIN and EDITOR end-to-end publishing flow;
 - direct endpoint authorization checks;
+- revision restore regression;
+- preview/noindex check;
+- autosave/unsaved-warning regression;
 - public visibility rules;
 - story metadata regression;
 - responsive/admin visual regression;
-- documentation synchronization.
+- final documentation synchronization.
 
 ## Exit criteria
 
@@ -144,9 +180,10 @@ Phase 2 is complete only when:
 - localStorage is no longer canonical for posts;
 - authorized editors can create/edit/review/publish durable content;
 - transitions are enforced server-side;
-- revisions are durable;
+- revisions are durable and restorable;
 - public pages render canonical published DB content;
-- persistent media storage is wired for publication assets;
+- Cloudinary media upload works with configured production credentials;
+- scheduled publishing worker is deployed and verified;
 - automated tests and `npm run verify` pass;
-- Phase 1 auth remains intact;
-- README/architecture/roadmap describe reality.
+- Phase 1 auth remains intact under ADMIN/EDITOR testing;
+- README/architecture/roadmap describe the verified reality.
