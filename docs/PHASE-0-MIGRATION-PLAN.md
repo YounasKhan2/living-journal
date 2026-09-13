@@ -1,43 +1,46 @@
 # 🚧 Phase 0 — Production Foundation & Next.js Migration Plan
 
-> **Goal:** move the stable V2.1 React/Vite frontend onto the accepted Next.js production runtime without redesigning the product, then establish the database/environment/CI foundation required for later phases.
+> **Goal:** move the accepted V2.1 frontend onto the production runtime without redesigning it, then establish the data, environment and CI foundation required for later phases.
 
-## Scope guard
+## Current checkpoint
 
-Phase 0 includes **runtime migration and production foundation only**.
+| Subphase | Scope | Status |
+|---|---|---|
+| 0A | Freeze/inventory V2.1 | ✅ Complete |
+| 0B | Next.js App Router migration | ✅ Implemented |
+| 0C | GSAP + browser/SSR stabilization | 🟡 Implementation in place; local verification required |
+| 0D | PostgreSQL + Prisma + env validation | ⬜ Next after 0C verification |
+| 0E | Redis/queue boundary | ⬜ Planned |
+| 0F | CI + developer experience | ⬜ Planned |
+| 0G | Visual/manual regression QA | ⬜ Planned |
 
-It does **not** include:
-- real admin authentication/RBAC;
-- production CMS persistence;
-- Content Radar ingestion;
-- AI generation;
-- newsletter delivery;
-- monetization providers.
-
-Those remain in later phases.
-
----
-
-## Phase 0A — Freeze and inventory the V2.1 baseline
-
-### Tasks
-- Record all current routes and page-level UI behavior.
-- Record all client-only dependencies and browser APIs.
-- Record localStorage-backed flows that must remain demo-only during migration.
-- Keep `tokens.css`, `global.css` and `polish.css` unchanged unless a Next.js compatibility issue requires a documented fix.
-- Capture a manual visual QA checklist for Home, Stories, Story Detail, Search, About and Admin.
-
-### Gate
-- Current Vite app still runs/builds before migration changes begin.
+Phase 0 does **not** include authentication/RBAC, production CMS persistence, Content Radar, AI generation, newsletter delivery or monetization providers.
 
 ---
 
-## Phase 0B — Introduce Next.js App Router
+## 0A — Freeze and inventory V2.1 ✅
 
-### Tasks
-- Replace Vite runtime/build configuration with Next.js.
-- Add root `src/app/layout.tsx` and global style imports.
-- Map public routes:
+The accepted V2.1 visual baseline is preserved through:
+
+- `src/styles/tokens.css`
+- `src/styles/global.css`
+- `src/styles/polish.css`
+- existing reusable screens/components
+- stabilized GSAP behavior from V2.1
+
+The migration is a runtime/framework migration, not a redesign.
+
+---
+
+## 0B — Next.js App Router ✅ Implemented
+
+### Completed
+
+- Replaced Vite as the active runtime with Next.js App Router.
+- Replaced React Router navigation/params with Next.js routing primitives.
+- Added root metadata/layout and route groups.
+- Preserved the existing `screens/` and reusable component architecture.
+- Added public routes:
   - `/`
   - `/stories`
   - `/stories/[slug]`
@@ -48,185 +51,158 @@ Those remain in later phases.
   - `/contact`
   - `/advertise`
   - `/legal/[page]`
-- Map admin demo routes under `/admin/*` without adding auth yet.
-- Preserve current screen/components during transition rather than rewriting all JSX.
-- Introduce client boundaries only where hooks, localStorage, GSAP or browser APIs require them.
-- Replace React Router `Link`, params and navigation usage with Next.js equivalents.
-- Replace document-title hook usage with Next.js metadata where practical; dynamic production metadata remains Phase 5.
+- Added admin demo routes:
+  - `/admin`
+  - `/admin/posts`
+  - `/admin/posts/new`
+  - `/admin/posts/[id]/edit`
+  - `/admin/audience`
+  - `/admin/settings`
+- Added `GET /api/health`.
+- Added Next.js metadata scaffolding and initial story metadata from seed content.
+- Added `.env.example` with `NEXT_PUBLIC_SITE_URL`.
+- Removed obsolete Vite entry/config files.
 
-### Gate
-- Every V2.1 route renders under Next.js.
-- Direct URL navigation/refresh works for internal routes.
-- UI matches the V2.1 baseline closely.
+### Runtime files
 
----
+```text
+src/app/
+├── layout.tsx
+├── not-found.tsx
+├── (public)/
+│   ├── layout.tsx
+│   ├── page.tsx
+│   ├── stories/
+│   ├── category/
+│   ├── search/
+│   ├── newsletter/
+│   ├── about/
+│   ├── contact/
+│   ├── advertise/
+│   └── legal/
+├── admin/
+└── api/health/route.ts
+```
 
-## Phase 0C — Stabilize motion and browser-only behavior
+### Verification note
 
-### Tasks
-- Keep GSAP animations inside client components.
-- Ensure `ScrollTrigger` registration only occurs in browser-safe/client modules.
-- Confirm cleanup under React strict/development behavior.
-- Preserve `prefers-reduced-motion`.
-- Make localStorage demo persistence browser-safe under SSR.
-- Remove any remaining direct `window`, `document`, `matchMedia` or `innerWidth` access from server-evaluated paths.
+The structural migration is committed, but a full `next build` could not be executed in the assistant environment because npm dependencies cannot be downloaded there. The local developer gate below must therefore be run before 0B/0C are considered verified:
 
-### Gate
-- No hydration/runtime errors.
-- Motion works on desktop/mobile and reduced-motion mode remains usable.
+```bash
+npm install
+npm run typecheck
+npm run build
+npm run dev
+```
 
----
-
-## Phase 0D — Environment and database foundation
-
-### Tasks
-- Add `prisma/schema.prisma`.
-- Add PostgreSQL connection configuration.
-- Add server-only Prisma client helper.
-- Add environment validation.
-- Add `.env.example` with placeholders only.
-- Add initial migration and development seed foundation.
-- Initial schema should include only entities needed to prove the foundation cleanly; avoid prematurely implementing the whole CMS.
-
-### Initial database entities
-Recommended minimal Phase 0 schema:
-- `SystemSetting` or equivalent small foundation table, **or** minimal `User`/`Post` shells only if needed for migration validation.
-
-Prefer the smallest schema that proves migrations and data access without accidentally starting Phase 1/2.
-
-### Gate
-- Fresh local Postgres database can migrate successfully.
-- A server-only health/data-access check confirms DB connectivity.
-- No database credentials enter Git/client code.
+Then manually open the route matrix and `/api/health`.
 
 ---
 
-## Phase 0E — Redis/queue boundary
+## 0C — Motion and browser-only behavior 🟡
 
-Redis/BullMQ are part of the target architecture, but should not be added blindly.
+### Already implemented
 
-### Decision
-- Add the **adapter/module boundary** in Phase 0 if useful.
-- Add actual Redis/BullMQ runtime only if Phase 0 health/infrastructure verification benefits from it.
-- Durable jobs become mandatory before Phase 3 ingestion and scheduled publishing/newsletter workflows.
+- GSAP/ScrollTrigger stays in a client component.
+- GSAP uses `gsap.context()` and cleanup on unmount.
+- The fragile full-page pinning behavior remains removed.
+- `prefers-reduced-motion` is preserved.
+- `localStorage` hydration now starts from deterministic seed state and reads browser storage only after mount.
+- Site header/mobile state, newsletter form, admin demo flows and search/filter interactions have explicit client boundaries.
 
-This keeps local setup lighter while preserving the architecture.
+### Remaining gate
 
----
+Verify locally that there are:
 
-## Phase 0F — CI and developer experience
-
-### Required scripts/checks
-- lint
-- typecheck
-- build
-- test baseline (even if initially small)
-
-### CI
-Add GitHub Actions that install dependencies and run the required checks on pushes/PRs.
-
-### Developer setup
-README must document:
-1. install dependencies;
-2. configure `.env.local` from `.env.example`;
-3. start/point to PostgreSQL;
-4. run Prisma migration/generate/seed commands;
-5. run development server;
-6. run verification commands.
-
-### Gate
-- Clean clone setup is reproducible from documentation.
-- CI is green on the migration branch/main integration.
-
----
-
-## Phase 0G — Visual regression/manual QA
-
-Before declaring Phase 0 complete, check at minimum:
-
-### Public
-- Home hero/layout/motion
-- Signal ticker
-- Latest stories
-- Briefing/editorial/trending sections
-- Stories archive
-- Category archive
-- Story detail body/related stories
-- Search
-- Newsletter
-- About
-- Contact
-- Advertise
-- Legal pages
-- 404
-
-### Admin demo
-- Dashboard
-- Posts list
-- New/edit post editor
-- Audience
-- Settings
-
-### Breakpoints
-- Desktop
-- Tablet
-- Mobile
-- Narrow mobile
-
-### Accessibility/performance basics
-- keyboard focus visible;
-- mobile navigation usable;
-- reduced-motion mode;
-- no horizontal overflow;
 - no hydration warnings;
-- images/content do not collapse during load.
+- no server-evaluation errors from `window`, `document`, `localStorage` or GSAP;
+- no duplicated ScrollTrigger behavior in development;
+- no visual regression on desktop/mobile;
+- correct reduced-motion behavior.
+
+0C is complete only after that local verification passes.
+
+---
+
+## 0D — PostgreSQL + Prisma + environment foundation ⬜
+
+After 0C verification:
+
+- add `prisma/schema.prisma`;
+- add PostgreSQL configuration;
+- add a server-only Prisma client helper;
+- add environment validation;
+- expand `.env.example` with placeholders only;
+- add an initial migration and small development seed;
+- add a DB-aware health/readiness check.
+
+Use the smallest schema that proves migrations and server-side data access. Do not accidentally begin the Phase 1 auth or Phase 2 CMS domain.
+
+### Gate
+
+- fresh local PostgreSQL database migrates successfully;
+- server-only DB connectivity check passes;
+- no database credentials enter Git/client code.
+
+---
+
+## 0E — Redis/queue boundary ⬜
+
+Redis/BullMQ remain part of the accepted architecture for durable workflows. Actual runtime infrastructure may wait until a durable job is needed, but the server boundary must be explicit before Content Radar, scheduled publishing or newsletter jobs are implemented.
+
+---
+
+## 0F — CI and developer experience ⬜
+
+Required baseline:
+
+- typecheck
+- lint
+- build
+- test
+- GitHub Actions on pushes/PRs
+- reproducible README setup
+
+The setup guide must cover environment creation, PostgreSQL, migrations/generation/seed and verification commands.
+
+---
+
+## 0G — Visual/manual regression QA ⬜
+
+Check at minimum:
+
+**Public:** Home, ticker, latest, briefing, editorial rail, trending, Stories, Category, Story Detail, Search, Newsletter, About, Contact, Advertise, Legal, 404.
+
+**Admin demo:** Dashboard, Posts, New/Edit, Audience, Settings.
+
+**Breakpoints:** desktop, tablet, mobile and narrow mobile.
+
+**Basics:** keyboard focus, mobile menu, reduced motion, horizontal overflow, hydration console, image/content layout stability.
 
 ---
 
 ## Execution order
 
 ```text
-0A Freeze V2.1 baseline
-        ↓
-0B Next.js runtime + route migration
-        ↓
-0C client/motion/SSR stabilization
-        ↓
-0D PostgreSQL + Prisma + env foundation
-        ↓
-0E queue boundary decision
-        ↓
-0F CI + setup workflow
-        ↓
+0A ✅ V2.1 frozen
+      ↓
+0B ✅ Next.js App Router implemented
+      ↓
+0C 🟡 local runtime / hydration / motion verification
+      ↓
+0D PostgreSQL + Prisma + env validation
+      ↓
+0E queue boundary
+      ↓
+0F CI + reproducible setup
+      ↓
 0G visual/manual regression audit
-        ↓
+      ↓
 Phase 0 complete
-        ↓
+      ↓
 Phase 1 Auth/RBAC
 ```
 
-## Commit strategy
-
-Keep Phase 0 auditable. Prefer several coherent commits rather than one giant migration:
-
-1. `docs: accept Next.js production architecture`
-2. `refactor: migrate app runtime and routes to Next.js`
-3. `fix: stabilize GSAP and browser-only client boundaries`
-4. `feat: add PostgreSQL Prisma and environment foundation`
-5. `ci: add production foundation checks`
-6. `docs: finalize Phase 0 setup and verification`
-
-Do not mix Phase 1 authentication into these commits.
-
 ## Phase 0 definition of done
 
-Phase 0 is complete when:
-- ADR-001 remains accepted and implementation matches it;
-- Next.js fully replaces Vite as the active runtime;
-- V2.1 visual experience remains intact;
-- current routes have working equivalents;
-- SSR/client boundaries are stable;
-- PostgreSQL/Prisma environment is reproducible;
-- build/typecheck/lint/tests and CI are green;
-- README and architecture/roadmap docs describe reality;
-- no Phase 1+ product feature is accidentally claimed as complete.
+Phase 0 is complete only when Next.js is the verified active runtime, V2.1 remains visually intact, browser/client boundaries are stable, PostgreSQL/Prisma setup is reproducible, verification/CI is green, documentation describes reality and no Phase 1+ feature is falsely claimed as complete.
