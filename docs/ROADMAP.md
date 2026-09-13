@@ -6,16 +6,16 @@
 
 ### ✅ V2.1 — Stable editorial visual baseline
 
-The accepted V2.1 experience remains frozen during Phase 0: reusable screens/components, premium editorial styling, GSAP motion, public/internal routes and local demo publishing behavior.
+The accepted V2.1 experience remains intact: reusable screens/components, premium editorial styling, GSAP motion, public/internal routes and local demo publishing behavior.
 
-### ✅ Runtime, database, queue and developer verification foundations
+### ✅ Phase 0 — Production foundation complete
 
-The project owner has locally verified Next.js/GSAP/SSR, PostgreSQL/Prisma, Redis/BullMQ and the deterministic developer quality gate.
+The project owner has locally verified the Next.js/GSAP/SSR migration, PostgreSQL/Prisma, Redis/BullMQ, deterministic developer verification and the final visual/manual regression pass.
 
 ---
 
 ## Phase 0 — Next.js migration & production foundation
-**Status:** 🟡 IN PROGRESS
+**Status:** ✅ COMPLETE
 
 ### Architecture decisions ✅
 - Next.js App Router accepted via ADR-001.
@@ -29,28 +29,16 @@ The project owner has locally verified Next.js/GSAP/SSR, PostgreSQL/Prisma, Redi
 - ✅ **0B — Next.js App Router migration.**
 - ✅ **0C — GSAP/browser/SSR stabilization verified locally.**
 - ✅ **0D — PostgreSQL + Prisma + environment validation verified locally.**
-- ✅ **0E — Redis/BullMQ boundary verified locally.** Redis health, typecheck and build passed; no product workers/jobs were introduced.
-- ✅ **0F — Reproducible developer verification complete.** Current lockfile is committed; `npm ci` is available and `npm run verify` passed locally end-to-end with 0 lint errors, green typecheck/tests and a successful production build. Hosted GitHub Actions is intentionally not required because the account cannot run Actions without billing.
-- 🟡 **0G — Full visual/manual regression audit.** Current Phase 0 task.
+- ✅ **0E — Redis/BullMQ boundary verified locally.**
+- ✅ **0F — Reproducible developer verification complete.** Current lockfile is committed; `npm ci` is available and `npm run verify` passed locally end-to-end. Hosted GitHub Actions is intentionally not required because the account cannot run Actions without billing.
+- ✅ **0G — Full visual/manual regression audit verified by the project owner.** Public/admin routes, responsive behavior, navigation/interactions, V2.1 visual preservation and browser smoke checks passed.
 
-Detailed gates: [`PHASE-0-MIGRATION-PLAN.md`](PHASE-0-MIGRATION-PLAN.md).
-
-### Phase 0 exit criteria
-- fresh clone can be configured from README;
-- deterministic dependency installation works from the committed lockfile;
-- lint/typecheck/test/build pass locally;
-- all V2.1 routes/navigation work;
-- visual/motion behavior is preserved;
-- no hydration/browser-only runtime warnings;
-- PostgreSQL migration + seed + DB health check succeed;
-- Redis health check succeeds and BullMQ producer boundary typechecks;
-- documentation describes reality;
-- no Phase 1+ feature is falsely claimed complete.
+Detailed Phase 0 record: [`PHASE-0-MIGRATION-PLAN.md`](PHASE-0-MIGRATION-PLAN.md) and [`PHASE-0G-QA.md`](PHASE-0G-QA.md).
 
 ---
 
 ## Phase 1 — Authentication & RBAC
-**Status:** ⬜ Planned
+**Status:** 🟡 CURRENT
 
 Secure admin login/logout/session, `ADMIN`/`EDITOR`, server authorization, bootstrap-first-admin, protected routes and auth rate limiting.
 
