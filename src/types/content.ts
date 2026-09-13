@@ -15,6 +15,9 @@ export type Post = {
   date: string
   readTime: string
   image: string
+  imageAlt?: string
+  imageAttribution?: string
+  coverMediaId?: string
   author: string
   featured?: boolean
   trending?: boolean
