@@ -17,6 +17,10 @@ function clientNetworkKey(request: Request) {
   return digest(forwarded || realIp || 'unknown')
 }
 
+function identifierKey(normalizedEmail: string) {
+  return `auth:login:identifier:${digest(normalizedEmail)}`
+}
+
 async function incrementWindow(key: string) {
   const redis = await ensureRedisConnected()
   const value = await redis.incr(key)
@@ -25,13 +29,30 @@ async function incrementWindow(key: string) {
   return { value, ttl: Math.max(ttl, 1) }
 }
 
-export async function checkLoginRateLimit(request: Request, normalizedEmail: string) {
+export async function checkNetworkLoginRateLimit(request: Request) {
   const network = await incrementWindow(`auth:login:network:${clientNetworkKey(request)}`)
-  const identifier = await incrementWindow(`auth:login:identifier:${digest(normalizedEmail)}`)
-
-  const allowed = network.value <= NETWORK_LIMIT && identifier.value <= IDENTIFIER_LIMIT
   return {
-    allowed,
-    retryAfterSeconds: Math.max(network.ttl, identifier.ttl),
+    allowed: network.value <= NETWORK_LIMIT,
+    retryAfterSeconds: network.ttl,
   }
+}
+
+export async function checkIdentifierLoginRateLimit(normalizedEmail: string) {
+  const redis = await ensureRedisConnected()
+  const key = identifierKey(normalizedEmail)
+  const value = Number(await redis.get(key) ?? 0)
+  const ttl = Math.max(await redis.ttl(key), 1)
+  return {
+    allowed: value < IDENTIFIER_LIMIT,
+    retryAfterSeconds: ttl,
+  }
+}
+
+export async function recordIdentifierLoginFailure(normalizedEmail: string) {
+  return incrementWindow(identifierKey(normalizedEmail))
+}
+
+export async function clearIdentifierLoginFailures(normalizedEmail: string) {
+  const redis = await ensureRedisConnected()
+  await redis.del(identifierKey(normalizedEmail))
 }
