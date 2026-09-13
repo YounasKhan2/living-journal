@@ -1,6 +1,6 @@
 # 🚧 Phase 0 — Production Foundation & Next.js Migration Plan
 
-> **Goal:** establish the production runtime/data/CI foundation without redesigning V2.1 or prematurely implementing Auth/CMS/Radar/AI.
+> **Goal:** establish the production runtime/data/developer-verification foundation without redesigning V2.1 or prematurely implementing Auth/CMS/Radar/AI.
 
 ## Current checkpoint
 
@@ -11,8 +11,8 @@
 | 0C | GSAP + browser/SSR stabilization | ✅ Verified locally |
 | 0D | PostgreSQL + Prisma + env validation | ✅ Verified locally |
 | 0E | Redis/BullMQ queue boundary | ✅ Verified locally |
-| 0F | CI + developer experience | 🟡 Implemented; verification + lockfile sync required |
-| 0G | Visual/manual regression QA | ⬜ Planned |
+| 0F | Reproducible developer verification | ✅ Verified locally |
+| 0G | Visual/manual regression QA | 🟡 Current |
 
 Phase 0 does **not** include authentication/RBAC, production CMS persistence, Content Radar, AI generation, newsletter delivery or monetization providers.
 
@@ -52,10 +52,9 @@ Verified locally by the project owner:
 
 The boundary includes a server-only Redis client, BullMQ producer factory, queue/job contracts and retry defaults. It intentionally includes no real workers/product jobs yet.
 
-## 0F — CI and developer experience 🟡
+## 0F — Reproducible developer verification ✅
 
-### Implemented
-
+Implemented and verified:
 - ESLint 9 + Next.js core-web-vitals/TypeScript configuration.
 - `npm run lint`.
 - Node test-runner baseline via `tsx --test`.
@@ -67,27 +66,17 @@ The boundary includes a server-only Redis client, BullMQ producer factory, queue
 db:validate → lint → typecheck → test → build
 ```
 
-- GitHub Actions workflow at `.github/workflows/ci.yml`.
-- CI provisions isolated PostgreSQL 16 and Redis 7 service containers.
-- CI applies migrations + seed before lint/typecheck/test/build.
-- CI runs on `main` pushes and pull requests with concurrency cancellation.
+- Current `package-lock.json` is committed and deterministic `npm ci` installs are supported.
+- Local verification passed end-to-end with 0 lint errors, green typecheck, 3/3 baseline tests and a successful production Next.js build.
+- Generated TypeScript build metadata is ignored.
 
-### Lockfile migration note
-
-The committed `package-lock.json` predates the Next.js/Prisma/Redis migration and is stale. CI therefore temporarily uses `npm install`, not `npm ci`.
-
-**0F is not fully complete until a refreshed lockfile generated from current `package.json` is committed.** Once that happens, CI must switch to `npm ci` and dependency caching may be enabled safely.
+GitHub-hosted Actions was evaluated but is not part of the required project gate because the account cannot start hosted jobs without resolving a billing restriction. The hosted workflow has therefore been removed rather than leaving every push with a false red status. Local deterministic verification is the canonical Phase 0F gate.
 
 ### Local verification gate
 
 ```powershell
 git pull origin main
-npm install
-npm run lint
-npm run typecheck
-npm run test
-npm run build
-# or run the aggregate check:
+npm ci
 npm run verify
 ```
 
@@ -97,16 +86,15 @@ Infrastructure should remain healthy:
 docker compose ps
 ```
 
-### Gate
+### Gate ✅
 
-0F becomes ✅ only when:
+0F is complete because:
+- current dependency lockfile is committed;
+- deterministic `npm ci` installation is available;
 - local lint/typecheck/test/build pass;
-- GitHub Actions run is green;
-- refreshed current lockfile is committed;
-- CI is switched from `npm install` to `npm ci`;
 - README setup matches the actual workflow.
 
-## 0G — Visual/manual regression QA ⬜
+## 0G — Visual/manual regression QA 🟡
 
 Final audit covers all public/admin demo routes, desktop/tablet/mobile/narrow-mobile, keyboard focus, mobile menu, reduced motion, overflow, hydration console and image/layout stability.
 
@@ -123,9 +111,9 @@ Final audit covers all public/admin demo routes, desktop/tablet/mobile/narrow-mo
       ↓
 0E ✅ Redis / BullMQ verified
       ↓
-0F 🟡 CI + lockfile verification
+0F ✅ deterministic local verification
       ↓
-0G regression QA
+0G 🟡 regression QA
       ↓
 Phase 0 complete
       ↓
@@ -134,4 +122,4 @@ Phase 1 Auth/RBAC
 
 ## Phase 0 definition of done
 
-Phase 0 is complete only when the Next.js runtime is verified, V2.1 remains visually intact, browser/client boundaries are stable, PostgreSQL/Prisma and Redis/BullMQ foundations are reproducible, CI/dependency installation is deterministic, documentation describes reality and no Phase 1+ feature is falsely claimed as complete.
+Phase 0 is complete only when the Next.js runtime is verified, V2.1 remains visually intact, browser/client boundaries are stable, PostgreSQL/Prisma and Redis/BullMQ foundations are reproducible, dependency installation and local verification are deterministic, documentation describes reality and no Phase 1+ feature is falsely claimed as complete.
