@@ -3,6 +3,7 @@ import { ZodError } from 'zod'
 import { getAuthorizedUser } from '../../../../../server/auth/authorize'
 import { assertSameOrigin } from '../../../../../server/auth/csrf'
 import { contentErrorResponse } from '../../../../../server/content/errors'
+import { toUiPost } from '../../../../../server/content/presenters'
 import { getCmsPostById } from '../../../../../server/content/queries'
 import { postPatchSchema } from '../../../../../server/content/schemas'
 import { deleteDraft, updatePostDraft } from '../../../../../server/content/service'
@@ -16,7 +17,7 @@ export async function GET(_request: Request, context: RouteContext) {
   const { id } = await context.params
   const post = await getCmsPostById(id)
   if (!post) return NextResponse.json({ error: 'Post not found.' }, { status: 404 })
-  return NextResponse.json({ post })
+  return NextResponse.json({ post: toUiPost(post), revisions: post.revisions })
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
@@ -34,7 +35,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const body = await request.json()
     const patch = postPatchSchema.parse(body)
     const post = await updatePostDraft(id, patch, user.id)
-    return NextResponse.json({ post })
+    return NextResponse.json({ post: toUiPost(post) })
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json({ error: 'Invalid post payload.', issues: error.issues }, { status: 400 })
