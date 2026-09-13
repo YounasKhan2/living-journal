@@ -1,8 +1,13 @@
 # Dependencies
 node_modules/
 
-# Build output
+# Next.js / build output
+.next/
+out/
 dist/
+
+# Prisma generated client
+src/generated/prisma/
 
 # Local environment files
 .env
