@@ -19,7 +19,7 @@ export async function hashPassword(password: string) {
 }
 
 export async function verifyPassword(passwordHash: string, password: string) {
-  if (!passwordHash || !validatePassword(password)) return false
+  if (!passwordHash || typeof password !== 'string' || password.length > PASSWORD_MAX_LENGTH) return false
 
   try {
     return await argon2.verify(passwordHash, password, {
