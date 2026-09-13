@@ -8,9 +8,9 @@
 
 The accepted V2.1 experience remains frozen during Phase 0: reusable screens/components, premium editorial styling, GSAP motion, public/internal routes and local demo publishing behavior.
 
-### ✅ Next.js + database foundation verified
+### ✅ Runtime, database and queue foundations verified locally
 
-The project owner locally verified the migrated Next.js build/runtime and PostgreSQL/Prisma connectivity, including the database health endpoint.
+The project owner has locally verified Next.js/GSAP/SSR, PostgreSQL/Prisma and Redis health/build gates.
 
 ---
 
@@ -28,22 +28,23 @@ The project owner locally verified the migrated Next.js build/runtime and Postgr
 - ✅ **0A — V2.1 baseline frozen.**
 - ✅ **0B — Next.js App Router migration.**
 - ✅ **0C — GSAP/browser/SSR stabilization verified locally.**
-- ✅ **0D — PostgreSQL + Prisma + environment validation verified locally.** Migration/seed/connectivity and `/api/health/database` passed.
-- 🟡 **0E — Redis/BullMQ boundary implemented; local verification required.** Redis Compose service, typed env validation, server-only client, reserved queue/job contracts, producer factory and `/api/health/redis` are in `main`. No product workers/jobs exist yet.
-- ⬜ **0F — CI + reproducible developer setup.**
+- ✅ **0D — PostgreSQL + Prisma + environment validation verified locally.**
+- ✅ **0E — Redis/BullMQ boundary verified locally.** Redis health, typecheck and build passed; no product workers/jobs were introduced.
+- 🟡 **0F — CI + reproducible developer checks implemented; verification in progress.** ESLint, unit-test baseline, `verify` script and GitHub Actions with PostgreSQL/Redis services are in `main`.
 - ⬜ **0G — Full visual/manual regression audit.**
 
 Detailed gates: [`PHASE-0-MIGRATION-PLAN.md`](PHASE-0-MIGRATION-PLAN.md).
 
 ### Phase 0 exit criteria
 - fresh clone can be configured from README;
-- typecheck/build pass;
+- lint/typecheck/test/build pass;
 - all V2.1 routes/navigation work;
 - visual/motion behavior is preserved;
 - no hydration/browser-only runtime warnings;
 - PostgreSQL migration + seed + DB health check succeed;
 - Redis health check succeeds and BullMQ producer boundary typechecks;
-- lint/test/build/typecheck CI baseline is green;
+- GitHub Actions baseline is green;
+- refreshed dependency lockfile is committed and CI can use deterministic install;
 - documentation describes reality;
 - no Phase 1+ feature is falsely claimed complete.
 
