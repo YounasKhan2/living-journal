@@ -6,6 +6,8 @@ import { Archive, ArrowCounterClockwise, Clock, Eye, FloppyDisk, PaperPlaneRight
 import type { ArticleSection, Post, PostStatus } from '../../../types/content'
 import { slugify } from '../../../utils/format'
 import { categories } from '../../../content/categories'
+import { CoverMediaUploader } from './CoverMediaUploader'
+import type { UploadedMediaAsset } from '../cmsApi'
 
 const emptyPost = (): Post => ({
   id: '',
@@ -121,6 +123,26 @@ export function PostEditor({ initialPost, onSave, onTransition }: PostEditorProp
     }
   }
 
+  function handleMediaUploaded(asset: UploadedMediaAsset) {
+    setDraft(current => ({
+      ...current,
+      image: asset.url,
+      coverMediaId: asset.id,
+      imageAlt: asset.altText,
+      imageAttribution: asset.attribution ?? undefined,
+    }))
+  }
+
+  function handleCoverUrl(value: string) {
+    setDraft(current => ({
+      ...current,
+      image: value,
+      coverMediaId: undefined,
+      imageAlt: undefined,
+      imageAttribution: undefined,
+    }))
+  }
+
   return <form className="post-editor" onSubmit={save}>
     <div className="post-editor__main">
       {error ? <p className="admin-notice admin-notice--error" role="alert">{error}</p> : null}
@@ -141,7 +163,7 @@ export function PostEditor({ initialPost, onSave, onTransition }: PostEditorProp
         <label>Read time<input value={draft.readTime} onChange={event => update('readTime', event.target.value)}/></label>
         <div className="editor-checks"><label><input type="checkbox" checked={Boolean(draft.featured)} onChange={event => update('featured', event.target.checked)}/> Featured story</label><label><input type="checkbox" checked={Boolean(draft.trending)} onChange={event => update('trending', event.target.checked)}/> Trending</label></div>
       </div>
-      <div className="editor-panel"><h2>Story details</h2><label>Category<select value={draft.category} onChange={event => update('category', event.target.value)}>{categories.map(category => <option key={category.slug}>{category.name}</option>)}</select></label><label>Author<input value={draft.author} onChange={event => update('author', event.target.value)}/></label><label>Slug<input value={slug} onChange={event => update('slug', event.target.value)}/></label><label>Cover image URL<input value={draft.image} onChange={event => update('image', event.target.value)}/></label><label>Tags<input value={draft.tags.join(', ')} onChange={event => update('tags', event.target.value.split(',').map(tag => tag.trim()).filter(Boolean))}/></label></div>
+      <div className="editor-panel"><h2>Story details</h2><label>Category<select value={draft.category} onChange={event => update('category', event.target.value)}>{categories.map(category => <option key={category.slug}>{category.name}</option>)}</select></label><label>Author<input value={draft.author} onChange={event => update('author', event.target.value)}/></label><label>Slug<input value={slug} onChange={event => update('slug', event.target.value)}/></label><CoverMediaUploader post={draft} onUploaded={handleMediaUploaded}/><label>Or use external cover URL<input value={draft.image} onChange={event => handleCoverUrl(event.target.value)}/></label><label>Tags<input value={draft.tags.join(', ')} onChange={event => update('tags', event.target.value.split(',').map(tag => tag.trim()).filter(Boolean))}/></label></div>
       <div className="post-editor__actions">
         {draft.status !== 'archived' ? <button disabled={pending || !dirty} type="submit" className="admin-button admin-button--ghost"><FloppyDisk size={17}/>{pending ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}</button> : null}
         {isPersisted && draft.status === 'draft' ? <button disabled={pending} type="button" className="admin-button" onClick={() => void transition('in_review')}><PaperPlaneRight size={17}/>Submit for review</button> : null}
