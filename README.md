@@ -12,12 +12,12 @@
 ![Prisma](https://img.shields.io/badge/Prisma-7.10-2D3748?logo=prisma&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
 ![BullMQ](https://img.shields.io/badge/BullMQ-Queue%20Boundary-f59e0b)
-![Verification](https://img.shields.io/badge/Verification-Local%20Gate%20Passed-22c55e)
+![Phase 0](https://img.shields.io/badge/Phase%200-Complete-22c55e)
 ![GSAP](https://img.shields.io/badge/GSAP-Motion-88CE02)
 
 A premium editorial experience evolving into a production publishing platform for **AI, software, startups, products, careers, business and future technology**.
 
-[PRD](docs/PRD.md) · [Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md) · [ADR-001](docs/adr/ADR-001-nextjs-production-architecture.md) · [Phase 0 Plan](docs/PHASE-0-MIGRATION-PLAN.md)
+[PRD](docs/PRD.md) · [Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md) · [ADR-001](docs/adr/ADR-001-nextjs-production-architecture.md) · [Phase 0 Record](docs/PHASE-0-MIGRATION-PLAN.md)
 
 </div>
 
@@ -36,17 +36,18 @@ The Living Journal is deliberately **not** an autonomous news scraper. Original 
 | Milestone | Status |
 |---|---|
 | V2.1 editorial UI baseline | ✅ Stable |
+| Phase 0 — Production foundation | ✅ Complete |
 | 0A — Freeze V2.1 | ✅ Complete |
 | 0B — Next.js App Router | ✅ Complete |
 | 0C — GSAP + SSR/client verification | ✅ Passed locally |
 | 0D — PostgreSQL + Prisma | ✅ Passed locally |
 | 0E — Redis/BullMQ boundary | ✅ Passed locally |
 | 0F — Reproducible developer verification | ✅ Passed locally |
-| 0G — final regression QA | 🟡 Current |
-| Phase 1 — Auth/RBAC | ⬜ Planned |
+| 0G — Final regression QA | ✅ Passed |
+| Phase 1 — Auth/RBAC | 🟡 Current |
 | Phase 2 — Production CMS | ⬜ Planned |
 
-Detailed gates: [`docs/PHASE-0-MIGRATION-PLAN.md`](docs/PHASE-0-MIGRATION-PLAN.md).
+Detailed roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ---
 
@@ -83,7 +84,7 @@ Redis 7 + BullMQ are verified locally. Phase 0 defines the connection/producer c
 
 ## 🔁 Quality workflow
 
-Phase 0F provides one deterministic local verification path for humans and coding agents:
+The repository provides one deterministic local verification path for humans and coding agents:
 
 ```text
 Prisma schema validation
@@ -103,9 +104,7 @@ Run everything with:
 npm run verify
 ```
 
-The local gate is verified: lint completed with **0 errors**, typecheck passed, all baseline tests passed and the production Next.js build completed successfully. Existing image-optimization/hook findings remain warnings and are tracked for cleanup rather than hidden.
-
-GitHub-hosted Actions is intentionally not a required project gate. The repository account cannot start hosted runners without resolving a billing restriction, so the workflow was removed instead of leaving every push with a false red status. The committed lockfile plus `npm ci` and `npm run verify` are the canonical reproducibility checks for now.
+The local gate is verified. GitHub-hosted Actions is intentionally not required because the repository account cannot start hosted runners without resolving a billing restriction. The committed lockfile plus `npm ci` and `npm run verify` are the canonical reproducibility checks.
 
 ---
 
@@ -144,10 +143,9 @@ docs/
 ├── PRD.md
 ├── ARCHITECTURE.md
 ├── ROADMAP.md
-└── PHASE-0-MIGRATION-PLAN.md
+├── PHASE-0-MIGRATION-PLAN.md
+└── PHASE-0G-QA.md
 ```
-
-The V2.1 visual layer remains frozen while infrastructure work continues.
 
 ---
 
@@ -269,16 +267,15 @@ Before substantial work, read in order:
 1. [`docs/PRD.md`](docs/PRD.md)
 2. [`docs/adr/ADR-001-nextjs-production-architecture.md`](docs/adr/ADR-001-nextjs-production-architecture.md)
 3. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-4. [`docs/PHASE-0-MIGRATION-PLAN.md`](docs/PHASE-0-MIGRATION-PLAN.md)
-5. [`docs/ROADMAP.md`](docs/ROADMAP.md)
+4. [`docs/ROADMAP.md`](docs/ROADMAP.md)
+5. Phase-specific implementation plan for the current milestone
 
 Non-negotiables:
 
-- preserve V2.1 visual behavior during Phase 0;
+- preserve the accepted V2.1 editorial identity unless a later design change is explicitly approved;
 - keep browser APIs in client boundaries;
 - keep database/Redis/provider credentials server-side;
 - never commit `.env` or provider credentials;
-- do not implement User/Auth/Post/CMS models during infrastructure-only subphases;
 - do not enqueue jobs before their owning feature has a real worker + idempotency design;
 - run `npm run verify` before calling implementation complete;
 - update README/docs whenever setup, architecture, workflow or phase status changes;
@@ -292,6 +289,6 @@ Non-negotiables:
 
 **Minimal, not empty. Editorial, not generic. Automated where useful, human where it matters.**
 
-`V2.1 ✅ → Next.js ✅ → PostgreSQL/Prisma ✅ → Redis/BullMQ ✅ → Verify ✅ → QA 🟡 → Auth`
+`V2.1 ✅ → Next.js ✅ → PostgreSQL/Prisma ✅ → Redis/BullMQ ✅ → Verify ✅ → QA ✅ → Auth 🟡`
 
 </div>
