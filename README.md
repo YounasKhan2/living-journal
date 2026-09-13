@@ -12,8 +12,8 @@
 ![Prisma](https://img.shields.io/badge/Prisma-7.10-2D3748?logo=prisma&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
 ![BullMQ](https://img.shields.io/badge/BullMQ-Queue%20Boundary-f59e0b)
+![CI](https://img.shields.io/badge/CI-Verification%20Gate-f59e0b?logo=githubactions)
 ![GSAP](https://img.shields.io/badge/GSAP-Motion-88CE02)
-![Phase](https://img.shields.io/badge/Phase%200E-Verification%20Gate-f59e0b)
 
 A premium editorial experience evolving into a production publishing platform for **AI, software, startups, products, careers, business and future technology**.
 
@@ -27,7 +27,21 @@ A premium editorial experience evolving into a production publishing platform fo
 
 > **APIs discover. AI assists. Humans decide. The Journal publishes.**
 
-The product is deliberately **not** an autonomous news scraper. Original publishing remains first-class; future RSS/API items enter a Content Radar and AI remains an editorial assistant.
+The Living Journal is deliberately **not** an autonomous news scraper. Original publishing remains first-class; future RSS/API items enter a Content Radar and AI remains an editorial assistant.
+
+```mermaid
+flowchart LR
+  Sources[RSS / Approved APIs] --> Radar[Content Radar]
+  Manual[Original Story] --> Draft[Editorial Draft]
+  Radar --> Research[Research]
+  Research --> AI[AI Assistance]
+  AI --> Draft
+  Draft --> Review[Human Review]
+  Review --> Publish[Publish / Schedule]
+  Publish --> Web[Website + SEO]
+  Publish --> Newsletter[Newsletter]
+  Web --> Revenue[Ads / Affiliate / Sponsors]
+```
 
 ---
 
@@ -39,9 +53,9 @@ The product is deliberately **not** an autonomous news scraper. Original publish
 | 0A — Freeze V2.1 | ✅ Complete |
 | 0B — Next.js App Router | ✅ Complete |
 | 0C — GSAP + SSR/client verification | ✅ Passed locally |
-| 0D — PostgreSQL + Prisma foundation | ✅ Passed locally |
-| 0E — Redis/BullMQ boundary | 🟡 Implemented; local verification now |
-| 0F — CI + reproducible setup | ⬜ Planned |
+| 0D — PostgreSQL + Prisma | ✅ Passed locally |
+| 0E — Redis/BullMQ boundary | ✅ Passed locally |
+| 0F — CI + developer workflow | 🟡 Implemented; verification + lockfile sync |
 | 0G — final regression QA | ⬜ Planned |
 | Phase 1 — Auth/RBAC | ⬜ Planned |
 | Phase 2 — Production CMS | ⬜ Planned |
@@ -68,22 +82,74 @@ flowchart TB
 
 PostgreSQL 16 + Prisma 7.10 are verified locally. The deliberately tiny `SystemSetting` model proves migration, seed and server connectivity without prematurely implementing Auth/CMS models.
 
-### Queue boundary 🟡
+### Queue boundary ✅
 
-Phase 0E adds Redis 7, `ioredis`, BullMQ contracts and a producer factory. It intentionally adds **no workers and no fake product jobs**. Future phases own the real workloads:
+Redis 7 + BullMQ are verified locally. Phase 0 defines the connection/producer contracts but **does not start real workers or fake product jobs**.
 
 | Queue | Owning future workflow |
 |---|---|
 | `content-ingestion` | Phase 3 Content Radar |
-| `scheduled-publish` | Production CMS publishing lifecycle |
+| `scheduled-publish` | Production CMS lifecycle |
 | `newsletter-send` | Phase 6 Audience/newsletter |
 | `ai-background` | Phase 4 AI Editorial Copilot |
+
+---
+
+## 🔁 Quality workflow
+
+Phase 0F adds one consistent verification path for humans, coding agents and GitHub Actions:
+
+```text
+Prisma schema validation
+        ↓
+ESLint
+        ↓
+TypeScript
+        ↓
+Unit tests
+        ↓
+Next.js production build
+```
+
+Run everything locally with:
+
+```powershell
+npm run verify
+```
+
+Or individually:
+
+```powershell
+npm run db:validate
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+```
+
+GitHub Actions also provisions isolated **PostgreSQL 16 + Redis 7** services, applies the committed migration + seed, then performs the same code-quality/build checks.
+
+### ⚠️ Temporary lockfile gate
+
+The committed `package-lock.json` is still from the original Vite-era prototype. The current CI therefore uses:
+
+```text
+npm install
+```
+
+instead of `npm ci`.
+
+After pulling Phase 0F, your local `npm install` will regenerate the lockfile from the current Next.js/Prisma/Redis/ESLint dependency graph. Once that refreshed lockfile is committed, CI will be switched to deterministic `npm ci`. **0F is not marked complete until this is done.**
 
 ---
 
 ## 🗂️ Important structure
 
 ```text
+.github/
+└── workflows/
+    └── ci.yml
+
 prisma/
 ├── schema.prisma
 ├── seed.ts
@@ -106,7 +172,10 @@ src/
 │       └── queue.ts
 ├── screens/
 ├── components/
-└── styles/
+├── styles/
+└── utils/
+    ├── format.ts
+    └── format.test.ts
 
 docs/
 ├── adr/
@@ -120,11 +189,11 @@ The V2.1 visual layer remains frozen while infrastructure work continues.
 
 ---
 
-## 🛠️ Fresh local setup
+## 🛠️ Local setup
 
 ### Requirements
 
-- Node.js 20+
+- Node.js 20+ (CI uses Node.js 22)
 - npm
 - Docker Desktop **or** your own PostgreSQL + Redis instances
 
@@ -135,13 +204,15 @@ git pull origin main
 npm install
 ```
 
-### 2. Create environment file on a fresh clone
+### 2. Environment
+
+For a fresh clone:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-If `.env` already exists, **do not overwrite it**. Add any new variables from `.env.example` manually.
+If `.env` or `.env.local` already exists, **do not overwrite it**. Merge new variables manually.
 
 Default local infrastructure values:
 
@@ -152,7 +223,7 @@ REDIS_URL=redis://localhost:6380
 
 Never commit `.env`.
 
-### 3. Start local infrastructure
+### 3. Start infrastructure
 
 ```powershell
 docker compose up -d postgres redis
@@ -166,9 +237,7 @@ PostgreSQL  localhost:5433 → container:5432
 Redis       localhost:6380 → container:6379
 ```
 
-If you run either service yourself, update the corresponding environment URL instead.
-
-### 4. Verify Prisma + database
+### 4. Prepare database
 
 ```powershell
 npm run db:validate
@@ -177,17 +246,15 @@ npm run db:deploy
 npm run db:seed
 ```
 
-Useful optional command:
+### 5. Verify the repository
 
 ```powershell
-npm run db:studio
+npm run verify
 ```
 
-### 5. Verify application
+### 6. Run the application
 
 ```powershell
-npm run typecheck
-npm run build
 npm run dev
 ```
 
@@ -200,22 +267,24 @@ http://localhost:3000/api/health/database
 http://localhost:3000/api/health/redis
 ```
 
-Expected dependency health responses are HTTP **200** with `dependency: "postgresql"` and `dependency: "redis"` respectively.
-
 ---
 
-## 🧪 Database scripts
+## 🧪 Useful scripts
 
 | Command | Purpose |
 |---|---|
+| `npm run dev` | Start Next.js development server |
+| `npm run lint` | Run ESLint/Next rules |
+| `npm run typecheck` | Generate Prisma client + TypeScript check |
+| `npm run test` | Run baseline Node/TS tests |
+| `npm run build` | Generate Prisma client + production Next build |
+| `npm run verify` | Run the full local quality gate |
 | `npm run db:validate` | Validate Prisma schema/config |
 | `npm run db:generate` | Generate typed Prisma client |
-| `npm run db:migrate` | Create/apply a development migration |
+| `npm run db:migrate` | Create/apply development migration |
 | `npm run db:deploy` | Apply committed migrations |
-| `npm run db:seed` | Seed development foundation data |
+| `npm run db:seed` | Seed foundation data |
 | `npm run db:studio` | Open Prisma Studio |
-
-`build` and `typecheck` run Prisma generation first so generated types match the committed schema.
 
 ---
 
@@ -227,7 +296,7 @@ GET /api/health/database
 GET /api/health/redis
 ```
 
-Dependency endpoints return **503** when unavailable and do not expose connection strings or raw errors to clients.
+Dependency endpoints return **503** when unavailable and never expose connection strings or raw internal errors to clients.
 
 ---
 
@@ -248,8 +317,8 @@ Non-negotiables:
 - keep database/Redis/provider credentials server-side;
 - never commit `.env` or provider credentials;
 - do not implement User/Auth/Post/CMS models during infrastructure-only subphases;
-- do not enqueue jobs before their owning feature has a real worker and idempotency design;
-- do not implement Phase 1+ features early;
+- do not enqueue jobs before their owning feature has a real worker + idempotency design;
+- run `npm run verify` before calling implementation complete;
 - update README/docs whenever setup, architecture, workflow or phase status changes;
 - never call a phase complete before its verification gate passes.
 
@@ -261,6 +330,6 @@ Non-negotiables:
 
 **Minimal, not empty. Editorial, not generic. Automated where useful, human where it matters.**
 
-`V2.1 ✅ → Next.js ✅ → PostgreSQL/Prisma ✅ → Redis/BullMQ 🟡 → CI → QA → Auth`
+`V2.1 ✅ → Next.js ✅ → PostgreSQL/Prisma ✅ → Redis/BullMQ ✅ → CI 🟡 → QA → Auth`
 
 </div>
