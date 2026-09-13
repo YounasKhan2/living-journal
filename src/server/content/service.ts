@@ -8,6 +8,12 @@ import { normalizePostSlug } from './slug'
 import { assertPostTransition } from './transitions'
 import { postInputSchema, postPatchSchema, postRevisionSnapshotSchema, type PostInput, type PostPatch, type PostStatusValue } from './schemas'
 
+const postInclude = {
+  category: true,
+  coverMedia: true,
+  tags: { include: { tag: true } },
+} as const
+
 function normalizeTagNames(tags: string[]) {
   const bySlug = new Map<string, string>()
   for (const name of tags) {
@@ -28,6 +34,12 @@ async function ensureCategory(tx: Prisma.TransactionClient, slugInput: string, n
     update: nameInput ? { name } : {},
     create: { slug, name },
   })
+}
+
+async function assertMediaExists(tx: Prisma.TransactionClient, mediaId: string | null | undefined) {
+  if (!mediaId) return
+  const media = await tx.mediaAsset.findUnique({ where: { id: mediaId }, select: { id: true } })
+  if (!media) throw new Error('MEDIA_NOT_FOUND')
 }
 
 async function replaceTags(tx: Prisma.TransactionClient, postId: string, tags: string[]) {
@@ -94,6 +106,7 @@ export async function createPostDraft(rawInput: PostInput, userId: string) {
 
   return prisma.$transaction(async tx => {
     const category = await ensureCategory(tx, input.categorySlug, input.categoryName)
+    await assertMediaExists(tx, input.coverMediaId)
     const post = await tx.post.create({
       data: {
         slug,
@@ -104,6 +117,7 @@ export async function createPostDraft(rawInput: PostInput, userId: string) {
         readTime: input.readTime.trim(),
         categoryId: category.id,
         coverImageUrl: input.coverImageUrl ?? null,
+        coverMediaId: input.coverMediaId ?? null,
         featured: input.featured,
         trending: input.trending,
         seoTitle: input.seoTitle?.trim() || null,
@@ -117,7 +131,7 @@ export async function createPostDraft(rawInput: PostInput, userId: string) {
     await createRevision(tx, post.id, userId)
     return tx.post.findUniqueOrThrow({
       where: { id: post.id },
-      include: { category: true, tags: { include: { tag: true } } },
+      include: postInclude,
     })
   })
 }
@@ -136,6 +150,8 @@ export async function updatePostDraft(postId: string, rawPatch: PostPatch, userI
       categoryId = category.id
     }
 
+    if (patch.coverMediaId !== undefined) await assertMediaExists(tx, patch.coverMediaId)
+
     const nextSlug = patch.slug ? normalizePostSlug(patch.slug) : current.slug
     if (nextSlug !== current.slug) {
       const conflict = await tx.post.findUnique({ where: { slug: nextSlug }, select: { id: true } })
@@ -153,6 +169,7 @@ export async function updatePostDraft(postId: string, rawPatch: PostPatch, userI
         readTime: patch.readTime?.trim(),
         categoryId,
         coverImageUrl: patch.coverImageUrl === undefined ? undefined : patch.coverImageUrl,
+        coverMediaId: patch.coverMediaId === undefined ? undefined : patch.coverMediaId,
         featured: patch.featured,
         trending: patch.trending,
         seoTitle: patch.seoTitle === undefined ? undefined : patch.seoTitle?.trim() || null,
@@ -166,7 +183,7 @@ export async function updatePostDraft(postId: string, rawPatch: PostPatch, userI
 
     return tx.post.findUniqueOrThrow({
       where: { id: postId },
-      include: { category: true, tags: { include: { tag: true } } },
+      include: postInclude,
     })
   })
 }
@@ -200,7 +217,7 @@ export async function transitionPost(postId: string, nextStatus: PostStatusValue
     })
 
     await createRevision(tx, postId, userId)
-    return tx.post.findUniqueOrThrow({ where: { id: postId }, include: { category: true } })
+    return tx.post.findUniqueOrThrow({ where: { id: postId }, include: postInclude })
   })
 
   if (nextStatus === 'SCHEDULED' && nextScheduledAt) {
@@ -232,6 +249,7 @@ export async function restorePostRevision(postId: string, revisionId: string, us
     }
 
     const category = await ensureCategory(tx, snapshot.data.category.slug, snapshot.data.category.name)
+    await assertMediaExists(tx, snapshot.data.coverMediaId)
 
     await tx.post.update({
       where: { id: postId },
@@ -261,7 +279,7 @@ export async function restorePostRevision(postId: string, revisionId: string, us
 
     return tx.post.findUniqueOrThrow({
       where: { id: postId },
-      include: { category: true, tags: { include: { tag: true } } },
+      include: postInclude,
     })
   })
 
