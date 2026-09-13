@@ -5,7 +5,7 @@ import { prisma } from '../db/prisma'
 import { slugify } from '../../utils/format'
 import { normalizePostSlug } from './slug'
 import { assertPostTransition } from './transitions'
-import { postInputSchema, postPatchSchema, type PostInput, type PostPatch, type PostStatusValue } from './schemas'
+import { postInputSchema, postPatchSchema, postRevisionSnapshotSchema, type PostInput, type PostPatch, type PostStatusValue } from './schemas'
 
 function normalizeTagNames(tags: string[]) {
   const bySlug = new Map<string, string>()
@@ -198,6 +198,60 @@ export async function transitionPost(postId: string, nextStatus: PostStatusValue
 
     await createRevision(tx, postId, userId)
     return tx.post.findUniqueOrThrow({ where: { id: postId }, include: { category: true } })
+  })
+}
+
+export async function restorePostRevision(postId: string, revisionId: string, userId: string) {
+  return prisma.$transaction(async tx => {
+    const revision = await tx.postRevision.findFirst({
+      where: { id: revisionId, postId },
+    })
+    if (!revision) throw new Error('REVISION_NOT_FOUND')
+
+    const snapshot = postRevisionSnapshotSchema.safeParse(revision.snapshot)
+    if (!snapshot.success) throw new Error('INVALID_REVISION_SNAPSHOT')
+
+    const current = await tx.post.findUnique({ where: { id: postId } })
+    if (!current) throw new Error('POST_NOT_FOUND')
+
+    const nextSlug = normalizePostSlug(snapshot.data.slug)
+    if (nextSlug !== current.slug) {
+      const conflict = await tx.post.findUnique({ where: { slug: nextSlug }, select: { id: true } })
+      if (conflict && conflict.id !== postId) throw new Error('POST_SLUG_TAKEN')
+    }
+
+    const category = await ensureCategory(tx, snapshot.data.category.slug, snapshot.data.category.name)
+
+    await tx.post.update({
+      where: { id: postId },
+      data: {
+        slug: nextSlug,
+        title: snapshot.data.title,
+        dek: snapshot.data.dek,
+        body: snapshot.data.body as Prisma.InputJsonValue,
+        authorName: snapshot.data.authorName,
+        readTime: snapshot.data.readTime,
+        status: 'DRAFT',
+        categoryId: category.id,
+        coverImageUrl: snapshot.data.coverImageUrl,
+        coverMediaId: snapshot.data.coverMediaId,
+        featured: snapshot.data.featured,
+        trending: snapshot.data.trending,
+        seoTitle: snapshot.data.seoTitle,
+        metaDescription: snapshot.data.metaDescription,
+        scheduledAt: null,
+        publishedAt: current.publishedAt,
+        updatedById: userId,
+      },
+    })
+
+    await replaceTags(tx, postId, snapshot.data.tags)
+    await createRevision(tx, postId, userId)
+
+    return tx.post.findUniqueOrThrow({
+      where: { id: postId },
+      include: { category: true, tags: { include: { tag: true } } },
+    })
   })
 }
 
