@@ -2,6 +2,8 @@ export function contentErrorResponse(error: unknown) {
   const message = error instanceof Error ? error.message : ''
 
   if (message === 'POST_NOT_FOUND') return { status: 404, error: 'Post not found.' }
+  if (message === 'REVISION_NOT_FOUND') return { status: 404, error: 'Revision not found.' }
+  if (message === 'INVALID_REVISION_SNAPSHOT') return { status: 409, error: 'This revision cannot be restored safely.' }
   if (message === 'POST_SLUG_TAKEN') return { status: 409, error: 'That slug is already in use.' }
   if (message === 'ONLY_DRAFTS_CAN_BE_DELETED') return { status: 409, error: 'Only draft posts can be deleted.' }
   if (message === 'ARCHIVED_POST_READ_ONLY') return { status: 409, error: 'Archived posts must be restored before editing.' }
