@@ -22,9 +22,9 @@ export async function verifyPassword(passwordHash: string, password: string) {
   if (!passwordHash || typeof password !== 'string' || password.length > PASSWORD_MAX_LENGTH) return false
 
   try {
-    return await argon2.verify(passwordHash, password, {
-      type: argon2.argon2id,
-    })
+    // The algorithm is encoded in the Argon2 hash itself; verify() does not
+    // accept the hash `type` option in argon2's VerifyOptions.
+    return await argon2.verify(passwordHash, password)
   } catch {
     return false
   }
