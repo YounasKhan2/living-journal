@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Archive, ArrowCounterClockwise, Clock, FloppyDisk, PaperPlaneRight } from 'phosphor-react'
 import type { ArticleSection, Post, PostStatus } from '../../../types/content'
 import { slugify } from '../../../utils/format'
@@ -60,25 +60,50 @@ export function PostEditor({ initialPost, onSave, onTransition }: PostEditorProp
   const [scheduledAt, setScheduledAt] = useState(initialPost?.scheduledAt?.slice(0, 16) ?? '')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
+  const [lastAutoSaveAt, setLastAutoSaveAt] = useState<Date | null>(null)
   const slug = useMemo(() => draft.slug || slugify(draft.title), [draft.slug, draft.title])
   const isPersisted = Boolean(draft.id)
 
   const update = <K extends keyof Post>(key: K, value: Post[K]) => setDraft(current => ({ ...current, [key]: value }))
-  const currentPost = () => ({ ...draft, slug, sections: editorTextToSections(body) })
+  const currentPost = useCallback((): Post => ({ ...draft, slug, sections: editorTextToSections(body) }), [body, draft, slug])
+  const currentSignature = useMemo(() => JSON.stringify(currentPost()), [currentPost])
+  const initialSignatureRef = useRef(currentSignature)
+  const dirty = currentSignature !== initialSignatureRef.current
 
-  async function save(event?: FormEvent) {
-    event?.preventDefault()
+  const persist = useCallback(async (mode: 'manual' | 'auto' = 'manual') => {
     if (pending) return
     setError('')
     setPending(true)
     try {
       await onSave(currentPost())
+      if (mode === 'auto') setLastAutoSaveAt(new Date())
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to save the story.')
     } finally {
       setPending(false)
     }
+  }, [currentPost, onSave, pending])
+
+  async function save(event?: FormEvent) {
+    event?.preventDefault()
+    await persist('manual')
   }
+
+  useEffect(() => {
+    if (!dirty) return
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [dirty])
+
+  useEffect(() => {
+    if (!isPersisted || !dirty || pending || draft.status === 'archived') return
+    const timer = window.setTimeout(() => { void persist('auto') }, 12000)
+    return () => window.clearTimeout(timer)
+  }, [dirty, draft.status, isPersisted, pending, persist])
 
   async function transition(status: PostStatus) {
     if (!onTransition || pending) return
@@ -98,6 +123,7 @@ export function PostEditor({ initialPost, onSave, onTransition }: PostEditorProp
   return <form className="post-editor" onSubmit={save}>
     <div className="post-editor__main">
       {error ? <p className="admin-notice admin-notice--error" role="alert">{error}</p> : null}
+      <div className="editor-save-state" data-dirty={dirty ? 'true' : 'false'}><span>{dirty ? 'Unsaved changes' : 'All changes saved'}</span><strong>{pending ? 'Saving…' : lastAutoSaveAt ? `Autosaved ${lastAutoSaveAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : isPersisted ? 'Autosave on' : 'Save once to enable autosave'}</strong></div>
       <div className="editor-field editor-field--title"><label htmlFor="post-title">Story title</label><textarea id="post-title" rows={2} required value={draft.title} onChange={event => update('title', event.target.value)} placeholder="A clear, memorable headline"/></div>
       <div className="editor-field"><label htmlFor="post-dek">Standfirst</label><textarea id="post-dek" rows={3} required value={draft.dek} onChange={event => update('dek', event.target.value)} placeholder="A concise summary that makes the reader care."/></div>
       <div className="editor-field"><label htmlFor="post-body">Article body</label><textarea id="post-body" rows={18} required value={body} onChange={event => setBody(event.target.value)} placeholder="Write the story. Separate paragraphs with a blank line."/><small>Use blank lines between blocks. Prefix a heading with ##, a quote with &gt;, or add images as <code>{'![alt](url) "caption"'}</code>.</small></div>
@@ -115,7 +141,7 @@ export function PostEditor({ initialPost, onSave, onTransition }: PostEditorProp
       </div>
       <div className="editor-panel"><h2>Story details</h2><label>Category<select value={draft.category} onChange={event => update('category', event.target.value)}>{categories.map(category => <option key={category.slug}>{category.name}</option>)}</select></label><label>Author<input value={draft.author} onChange={event => update('author', event.target.value)}/></label><label>Slug<input value={slug} onChange={event => update('slug', event.target.value)}/></label><label>Cover image URL<input value={draft.image} onChange={event => update('image', event.target.value)}/></label><label>Tags<input value={draft.tags.join(', ')} onChange={event => update('tags', event.target.value.split(',').map(tag => tag.trim()).filter(Boolean))}/></label></div>
       <div className="post-editor__actions">
-        {draft.status !== 'archived' ? <button disabled={pending} type="submit" className="admin-button admin-button--ghost"><FloppyDisk size={17}/>{pending ? 'Saving…' : 'Save changes'}</button> : null}
+        {draft.status !== 'archived' ? <button disabled={pending || !dirty} type="submit" className="admin-button admin-button--ghost"><FloppyDisk size={17}/>{pending ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}</button> : null}
         {isPersisted && draft.status === 'draft' ? <button disabled={pending} type="button" className="admin-button" onClick={() => void transition('in_review')}><PaperPlaneRight size={17}/>Submit for review</button> : null}
         {isPersisted && draft.status === 'in_review' ? <><button disabled={pending} type="button" className="admin-button admin-button--ghost" onClick={() => void transition('draft')}><ArrowCounterClockwise size={17}/>Return to draft</button><button disabled={pending || !scheduledAt} type="button" className="admin-button admin-button--ghost" onClick={() => void transition('scheduled')}><Clock size={17}/>Schedule</button><button disabled={pending} type="button" className="admin-button" onClick={() => void transition('published')}><PaperPlaneRight size={17}/>Publish</button></> : null}
         {isPersisted && draft.status === 'scheduled' ? <><button disabled={pending} type="button" className="admin-button admin-button--ghost" onClick={() => void transition('draft')}><ArrowCounterClockwise size={17}/>Unschedule</button><button disabled={pending} type="button" className="admin-button" onClick={() => void transition('published')}><PaperPlaneRight size={17}/>Publish now</button></> : null}
