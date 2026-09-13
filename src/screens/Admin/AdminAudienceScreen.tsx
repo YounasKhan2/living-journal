@@ -1,3 +1,5 @@
+'use client'
+
 import { useContent } from '../../context/ContentContext'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { AdminHeader } from './components/AdminHeader'

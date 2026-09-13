@@ -1,3 +1,5 @@
+'use client'
+
 import { useMemo, useState, type FormEvent } from 'react'
 import { FloppyDisk, PaperPlaneRight } from 'phosphor-react'
 import type { ArticleSection, Post, PostStatus } from '../../../types/content'

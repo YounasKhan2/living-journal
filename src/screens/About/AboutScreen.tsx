@@ -1,3 +1,5 @@
+'use client'
+
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 
 export function AboutScreen() {

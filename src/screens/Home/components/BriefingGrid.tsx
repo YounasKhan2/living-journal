@@ -1,1 +1,38 @@
-import { ArrowUpRight,Clock,TrendUp } from 'phosphor-react';import { Link } from 'react-router-dom';import type { Post } from '../../../types/content';export function BriefingGrid({posts}:{posts:Post[]}){if(!posts.length)return null;const[primary,...rest]=posts;return <section className="briefing-grid page-gutter"><div className="briefing-grid__head reveal"><div><span className="eyebrow">Editor’s desk</span><h2>A denser read of<br/><span className="serif">what matters now.</span></h2></div><p>Context before velocity. A compact daily briefing assembled from the themes moving through technology, work and culture.</p></div><div className="briefing-grid__layout"><Link to={`/stories/${primary.slug}`} className="briefing-card briefing-card--primary reveal"><div className="briefing-card__media"><img src={primary.image} alt=""/></div><div className="briefing-card__content"><div className="briefing-card__meta"><span>{primary.category}</span><span><Clock size={13}/>{primary.readTime}</span></div><h3>{primary.title}</h3><p>{primary.dek}</p><span className="briefing-card__link">Read the briefing <ArrowUpRight size={16}/></span></div></Link><div className="briefing-grid__stack">{rest.slice(0,3).map((post,index)=><Link to={`/stories/${post.slug}`} className="briefing-mini reveal" key={post.id}><div className="briefing-mini__index">0{index+2}</div><div className="briefing-mini__copy"><span>{post.category}</span><h3>{post.title}</h3><p>{post.dek}</p></div><div className="briefing-mini__action"><TrendUp size={18}/><ArrowUpRight size={16}/></div></Link>)}</div></div></section>}
+import { ArrowUpRight, Clock, TrendUp } from 'phosphor-react'
+import Link from 'next/link'
+import type { Post } from '../../../types/content'
+
+export function BriefingGrid({ posts }: { posts: Post[] }) {
+  if (!posts.length) return null
+  const [primary, ...rest] = posts
+
+  return <section className="briefing-grid page-gutter">
+    <div className="briefing-grid__head reveal">
+      <div>
+        <span className="eyebrow">Editor’s desk</span>
+        <h2>A denser read of<br/><span className="serif">what matters now.</span></h2>
+      </div>
+      <p>Context before velocity. A compact daily briefing assembled from the themes moving through technology, work and culture.</p>
+    </div>
+
+    <div className="briefing-grid__layout">
+      <Link href={`/stories/${primary.slug}`} className="briefing-card briefing-card--primary reveal">
+        <div className="briefing-card__media"><img src={primary.image} alt="" loading="lazy"/></div>
+        <div className="briefing-card__content">
+          <div className="briefing-card__meta"><span>{primary.category}</span><span><Clock size={13}/>{primary.readTime}</span></div>
+          <h3>{primary.title}</h3>
+          <p>{primary.dek}</p>
+          <span className="briefing-card__link">Read the briefing <ArrowUpRight size={16}/></span>
+        </div>
+      </Link>
+
+      <div className="briefing-grid__stack">
+        {rest.slice(0, 3).map((post, index) => <Link href={`/stories/${post.slug}`} className="briefing-mini reveal" key={post.id}>
+          <div className="briefing-mini__index">0{index + 2}</div>
+          <div className="briefing-mini__copy"><span>{post.category}</span><h3>{post.title}</h3><p>{post.dek}</p></div>
+          <div className="briefing-mini__action"><TrendUp size={18}/><ArrowUpRight size={16}/></div>
+        </Link>)}
+      </div>
+    </div>
+  </section>
+}

@@ -1,28 +1,26 @@
 {
-  "name": "living-journal-editorial-platform",
+  "name": "living-journal",
   "private": true,
-  "version": "1.0.0",
-  "type": "module",
+  "version": "0.2.0",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview",
-    "typecheck": "tsc -b --pretty false"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
     "gsap": "^3.13.0",
+    "next": "^16.0.0",
     "phosphor-react": "^1.4.1",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "react-router-dom": "^7.8.2"
+    "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "@types/node": "^22.10.0",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
-    "@vitejs/plugin-react": "^5.0.2",
-    "typescript": "^5.9.2",
-    "vite": "^7.1.4"
+    "typescript": "^5.9.2"
   },
-  "description": "Reusable Awwwards-inspired multi-page editorial publishing platform"
+  "description": "Human-led, AI-assisted editorial technology publication"
 }

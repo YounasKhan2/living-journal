@@ -1,4 +1,6 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+'use client'
+
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { seedPosts } from '../content/seedPosts'
 import type { Post } from '../types/content'
 
@@ -18,62 +20,38 @@ type ContentContextValue = {
 
 const ContentContext = createContext<ContentContextValue | null>(null)
 
-function safeGetItem(key: string) {
-  if (typeof window === 'undefined') return null
+function readStoredPosts(): Post[] {
   try {
-    return window.localStorage.getItem(key)
-  } catch {
-    return null
-  }
-}
-
-function safeSetItem(key: string, value: string) {
-  if (typeof window === 'undefined') return
-  try {
-    window.localStorage.setItem(key, value)
-  } catch {
-    // The demo remains usable even when storage is blocked/private.
-  }
-}
-
-function safeRemoveItem(key: string) {
-  if (typeof window === 'undefined') return
-  try {
-    window.localStorage.removeItem(key)
-  } catch {
-    // Ignore unavailable storage in the local demo.
-  }
-}
-
-function readPosts() {
-  const saved = safeGetItem(POSTS_KEY)
-  if (!saved) return seedPosts
-  try {
-    const parsed = JSON.parse(saved) as Post[]
-    return Array.isArray(parsed) ? parsed : seedPosts
+    const saved = window.localStorage.getItem(POSTS_KEY)
+    return saved ? JSON.parse(saved) as Post[] : seedPosts
   } catch {
     return seedPosts
   }
 }
 
-function readSubscribers() {
-  const saved = safeGetItem(SUBSCRIBERS_KEY)
-  if (!saved) return []
+function readStoredSubscribers(): string[] {
   try {
-    const parsed = JSON.parse(saved) as string[]
-    return Array.isArray(parsed) ? parsed : []
+    const saved = window.localStorage.getItem(SUBSCRIBERS_KEY)
+    return saved ? JSON.parse(saved) as string[] : []
   } catch {
     return []
   }
 }
 
 export function ContentProvider({ children }: { children: ReactNode }) {
-  const [posts, setPosts] = useState<Post[]>(readPosts)
-  const [subscribers, setSubscribers] = useState<string[]>(readSubscribers)
+  // Deterministic initial state keeps the first server/client render identical.
+  // Browser demo storage is hydrated only after mount.
+  const [posts, setPosts] = useState<Post[]>(seedPosts)
+  const [subscribers, setSubscribers] = useState<string[]>([])
+
+  useEffect(() => {
+    setPosts(readStoredPosts())
+    setSubscribers(readStoredSubscribers())
+  }, [])
 
   const persistPosts = (next: Post[]) => {
     setPosts(next)
-    safeSetItem(POSTS_KEY, JSON.stringify(next))
+    try { window.localStorage.setItem(POSTS_KEY, JSON.stringify(next)) } catch { /* demo storage may be unavailable */ }
   }
 
   const createPost = (post: Post) => persistPosts([post, ...posts])
@@ -85,14 +63,14 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     if (!normalized || subscribers.includes(normalized)) return false
     const next = [...subscribers, normalized]
     setSubscribers(next)
-    safeSetItem(SUBSCRIBERS_KEY, JSON.stringify(next))
+    try { window.localStorage.setItem(SUBSCRIBERS_KEY, JSON.stringify(next)) } catch { /* demo storage may be unavailable */ }
     return true
   }
 
   const resetDemoContent = () => {
     persistPosts(seedPosts)
     setSubscribers([])
-    safeRemoveItem(SUBSCRIBERS_KEY)
+    try { window.localStorage.removeItem(SUBSCRIBERS_KEY) } catch { /* demo storage may be unavailable */ }
   }
 
   const value = useMemo<ContentContextValue>(() => ({

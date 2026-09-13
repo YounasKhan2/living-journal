@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import { useContent } from '../../context/ContentContext'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'

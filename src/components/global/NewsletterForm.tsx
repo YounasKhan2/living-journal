@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, type FormEvent } from 'react'
 import { ArrowRight } from 'phosphor-react'
 import { useContent } from '../../context/ContentContext'

@@ -1,7 +1,8 @@
-import { Outlet } from 'react-router-dom'
+import type { ReactNode } from 'react'
 import { SiteFooter } from './SiteFooter'
 import { SiteHeader } from './SiteHeader'
+import { ScrollRestoration } from './ScrollRestoration'
 
-export function PublicLayout() {
-  return <div className="public-shell"><SiteHeader/><Outlet/><SiteFooter/></div>
+export function PublicLayout({ children }: { children: ReactNode }) {
+  return <div className="public-shell"><ScrollRestoration/><SiteHeader/><div className="public-content">{children}</div><SiteFooter/></div>
 }
