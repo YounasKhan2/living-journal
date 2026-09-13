@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { useContent } from '../../context/ContentContext'
+import type { Post } from '../../types/content'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { Hero } from './components/Hero'
 import { LeadStory } from './components/LeadStory'
@@ -16,10 +16,10 @@ import { BriefingGrid } from './components/BriefingGrid'
 
 gsap.registerPlugin(ScrollTrigger)
 
-export function HomeScreen() {
+export function HomeScreen({ posts }: { posts: Post[] }) {
   useDocumentTitle('Independent stories on technology and culture')
   const root = useRef<HTMLElement>(null)
-  const { publishedPosts } = useContent()
+  const publishedPosts = posts
   const featured = publishedPosts.find(post => post.featured) ?? publishedPosts[0]
 
   useEffect(() => {
