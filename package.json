@@ -23,7 +23,7 @@
     "@gsap/react": "^2.1.2",
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
-    "argon2": "^0.44.0",
+    "argon2": "^0.45.1",
     "bullmq": "^5.58.5",
     "gsap": "^3.13.0",
     "ioredis": "^5.7.0",
