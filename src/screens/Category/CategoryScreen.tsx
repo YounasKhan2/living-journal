@@ -1,15 +1,14 @@
 'use client'
 
 import { categories } from '../../content/categories'
-import { useContent } from '../../context/ContentContext'
+import type { Post } from '../../types/content'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { formatCategorySlug } from '../../utils/format'
 import { StoriesGrid } from '../Stories/components/StoriesGrid'
 
-export function CategoryScreen({ slug }: { slug: string }) {
-  const { publishedPosts } = useContent()
+export function CategoryScreen({ slug, posts: allPosts }: { slug: string; posts: Post[] }) {
   const category = categories.find(item => item.slug === slug)
-  const posts = publishedPosts.filter(post => formatCategorySlug(post.category) === slug || (slug === 'ai' && post.category === 'Artificial Intelligence'))
+  const posts = allPosts.filter(post => formatCategorySlug(post.category) === slug || (slug === 'ai' && post.category === 'Artificial Intelligence'))
   useDocumentTitle(category?.name ?? 'Category')
 
   return <main className="archive-page page-gutter page-top">
