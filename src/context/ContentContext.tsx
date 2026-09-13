@@ -18,18 +18,53 @@ type ContentContextValue = {
 
 const ContentContext = createContext<ContentContextValue | null>(null)
 
+function safeGetItem(key: string) {
+  if (typeof window === 'undefined') return null
+  try {
+    return window.localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function safeSetItem(key: string, value: string) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(key, value)
+  } catch {
+    // The demo remains usable even when storage is blocked/private.
+  }
+}
+
+function safeRemoveItem(key: string) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.removeItem(key)
+  } catch {
+    // Ignore unavailable storage in the local demo.
+  }
+}
+
 function readPosts() {
-  if (typeof window === 'undefined') return seedPosts
-  const saved = window.localStorage.getItem(POSTS_KEY)
+  const saved = safeGetItem(POSTS_KEY)
   if (!saved) return seedPosts
-  try { return JSON.parse(saved) as Post[] } catch { return seedPosts }
+  try {
+    const parsed = JSON.parse(saved) as Post[]
+    return Array.isArray(parsed) ? parsed : seedPosts
+  } catch {
+    return seedPosts
+  }
 }
 
 function readSubscribers() {
-  if (typeof window === 'undefined') return []
-  const saved = window.localStorage.getItem(SUBSCRIBERS_KEY)
+  const saved = safeGetItem(SUBSCRIBERS_KEY)
   if (!saved) return []
-  try { return JSON.parse(saved) as string[] } catch { return [] }
+  try {
+    const parsed = JSON.parse(saved) as string[]
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
 }
 
 export function ContentProvider({ children }: { children: ReactNode }) {
@@ -38,7 +73,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
 
   const persistPosts = (next: Post[]) => {
     setPosts(next)
-    window.localStorage.setItem(POSTS_KEY, JSON.stringify(next))
+    safeSetItem(POSTS_KEY, JSON.stringify(next))
   }
 
   const createPost = (post: Post) => persistPosts([post, ...posts])
@@ -50,14 +85,14 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     if (!normalized || subscribers.includes(normalized)) return false
     const next = [...subscribers, normalized]
     setSubscribers(next)
-    window.localStorage.setItem(SUBSCRIBERS_KEY, JSON.stringify(next))
+    safeSetItem(SUBSCRIBERS_KEY, JSON.stringify(next))
     return true
   }
 
   const resetDemoContent = () => {
     persistPosts(seedPosts)
     setSubscribers([])
-    window.localStorage.removeItem(SUBSCRIBERS_KEY)
+    safeRemoveItem(SUBSCRIBERS_KEY)
   }
 
   const value = useMemo<ContentContextValue>(() => ({
