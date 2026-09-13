@@ -10,7 +10,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)
 ![GSAP](https://img.shields.io/badge/GSAP-Motion-88CE02)
-![Status](https://img.shields.io/badge/Product-V2%20Complete-2ea44f)
+![UI](https://img.shields.io/badge/V2%20UI-Recovered-2ea44f)
 ![Next](https://img.shields.io/badge/Next-Production%20Foundation-f59e0b)
 
 A reusable Awwwards-inspired editorial frontend evolving into a production publishing platform for **AI, software, startups, products, careers, business and future technology**.
@@ -21,17 +21,11 @@ A reusable Awwwards-inspired editorial frontend evolving into a production publi
 
 ---
 
-## ✨ What we're building
+## ✨ Product idea
 
-The Living Journal is not intended to become an automated news scraper. The product combines original publishing with a **Content Radar** that discovers useful stories from RSS/approved APIs and an **AI Editorial Copilot** that helps editors research and draft.
+The Living Journal is not an automated news scraper. It combines original publishing with a future **Content Radar** for RSS/approved APIs and an **AI Editorial Copilot** for research and drafting.
 
 > **APIs discover. AI assists. Humans decide. The Journal publishes.**
-
-The long-term business combines quality editorial content, SEO, newsletters, affiliate content, sponsorships and eventually advertising/digital products.
-
----
-
-## 🧭 Core workflow
 
 ```mermaid
 flowchart LR
@@ -45,78 +39,91 @@ flowchart LR
   Publish --> Web[Website + SEO]
   Publish --> Newsletter[Newsletter]
   Web --> Revenue[Ads / Affiliate / Sponsors]
-  Newsletter --> Revenue
-  Web --> Analytics[Analytics]
 ```
-
-**Important:** external source items are editorial leads. They are never silently copied or auto-published, and AI never receives direct production-publish authority.
 
 ---
 
-## 🚦 Project status
+## 🚦 Current status
 
 | Phase | Scope | Status |
 |---|---|---|
 | V2 | Reusable editorial frontend + GSAP visual system | ✅ Complete |
-| Phase 0 | Architecture decision + DB/infrastructure/CI foundation | ⏭️ Next |
+| V2.1 | UI recovery, responsive/internal-page polish | ✅ Complete |
+| Phase 0 | Architecture decision + DB/infrastructure/CI | ⏭️ Next |
 | Phase 1 | Authentication + RBAC | ⬜ Planned |
-| Phase 2 | Production CMS + media + persistent content | ⬜ Planned |
+| Phase 2 | Production CMS + media | ⬜ Planned |
 | Phase 3 | Content Radar + RSS/API ingestion | ⬜ Planned |
 | Phase 4 | AI Editorial Copilot | ⬜ Planned |
-| Phase 5 | Dynamic SEO + sitemap + RSS/distribution | ⬜ Planned |
-| Phase 6 | Audience + production newsletter | ⬜ Planned |
+| Phase 5 | SEO + sitemap + RSS/distribution | ⬜ Planned |
+| Phase 6 | Audience + newsletter | ⬜ Planned |
 | Phase 7 | Monetization | ⬜ Planned |
 | Phase 8 | Analytics + hardening + launch | ⬜ Planned |
 
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) for deliverables and exit criteria.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for phase exit criteria.
 
 ---
 
-## 🎨 V2 experience
+## 🎨 V2.1 UI recovery
 
-The current application provides:
+The first GitHub push did not carry the complete visual styling from the working V2 source, which left the landing/internal routes visually incomplete and could produce a broken-looking page. V2.1 fixes that baseline before backend work begins.
 
-- 🏠 Layered editorial homepage with warm stone, sage and periwinkle surfaces.
-- 🎞️ GSAP hero parallax, scroll-linked storytelling, signal ticker and pinned editorial rail.
-- 🗞️ Story archive, category pages, search and story details.
-- ✍️ Reusable local demo post editor with drafts/publishing.
-- 📬 Newsletter signup demo and audience screen.
-- 📱 Responsive behavior and reduced-motion support.
-- 🧩 Screen-local components plus reusable global components.
-- 🔎 Starter robots, sitemap and RSS assets.
+### What was fixed
 
-### ⚠️ Current V2 boundary
+- ✅ Restored the layered editorial canvas instead of a flat/empty page.
+- ✅ Rebuilt responsive header + working full-screen mobile navigation styling.
+- ✅ Stabilized GSAP setup and removed the fragile full-page pinned rail behavior.
+- ✅ Restored hero parallax, ticker motion, reveal motion and editorial media motion.
+- ✅ Added complete styling for Stories, Category, Story Detail and Search.
+- ✅ Added complete styling for Newsletter, About, Contact, Advertise, Legal and 404.
+- ✅ Recovered detailed admin tables/forms/layout styling.
+- ✅ Added small-screen layouts down to narrow mobile widths.
+- ✅ Made demo `localStorage` access fail-safe so storage restrictions do not blank the app.
+- ✅ Preserved `prefers-reduced-motion` behavior.
 
-V2 uses browser `localStorage` for demo publishing/subscribers. It is **not yet a multi-user production CMS**. Authentication, durable content, media, source ingestion, AI, newsletter delivery and monetization are intentionally part of the phased V3 roadmap.
+### Styling files
+
+```text
+src/styles/
+├── tokens.css      # colors, typography, spacing tokens
+├── global.css      # original structural/base rules
+└── polish.css      # V2.1 recovery + detailed route/responsive styling
+```
+
+`polish.css` intentionally loads **after** the base styles. Once Phase 0 starts, we can consolidate these files carefully after visual regression checks instead of doing a risky rewrite now.
 
 ---
 
-## 🗂️ Current project structure
+## 🧩 Current experience
+
+The application currently includes:
+
+- Layered editorial homepage with warm stone, sage and periwinkle surfaces.
+- GSAP hero parallax, signal ticker, reveal choreography and editorial storytelling.
+- Story archive and category filtering.
+- Story detail reading progress and related stories.
+- Search.
+- Newsletter landing/signup demo.
+- About, contact, advertising and legal pages.
+- Responsive mobile menu.
+- Local demo publisher/admin screens.
+- Starter robots, sitemap and RSS assets.
+
+> **V2 boundary:** publishing and subscribers still use browser `localStorage`. This is a frontend demo, not yet a secure multi-user CMS.
+
+---
+
+## 🗂️ Structure
 
 ```text
 src/
 ├── app/
-│   └── App.tsx
 ├── components/
-│   └── global/                 # shared public UI
+│   └── global/
 ├── content/
-│   ├── categories.ts
-│   └── seedPosts.ts
 ├── context/
-│   └── ContentContext.tsx      # V2 local demo persistence
 ├── hooks/
 ├── screens/
 │   ├── Home/
-│   │   ├── HomeScreen.tsx
-│   │   └── components/
-│   │       ├── Hero.tsx
-│   │       ├── SignalTicker.tsx
-│   │       ├── LeadStory.tsx
-│   │       ├── LatestStories.tsx
-│   │       ├── BriefingGrid.tsx
-│   │       ├── EditorialRail.tsx
-│   │       ├── Trending.tsx
-│   │       └── NewsletterBand.tsx
 │   ├── Stories/
 │   ├── StoryDetail/
 │   ├── Category/
@@ -130,7 +137,8 @@ src/
 │   └── Admin/
 ├── styles/
 │   ├── tokens.css
-│   └── global.css
+│   ├── global.css
+│   └── polish.css
 ├── types/
 └── utils/
 
@@ -140,11 +148,11 @@ docs/
 └── ROADMAP.md
 ```
 
-Screen-specific components stay with their screen; components shared across multiple product areas belong in the global/shared layer.
+Screen-specific components remain colocated with their screen. Shared site primitives stay under `components/global`.
 
 ---
 
-## 🌐 Routes today
+## 🌐 Routes
 
 ### Public
 
@@ -155,42 +163,46 @@ Screen-specific components stay with their screen; components shared across mult
 | `/stories/:slug` | Story detail |
 | `/category/:slug` | Category archive |
 | `/search` | Search |
-| `/newsletter` | Newsletter landing |
-| `/about` | Publication story |
+| `/newsletter` | Newsletter |
+| `/about` | About |
 | `/contact` | Contact |
 | `/advertise` | Sponsorship/advertising |
-| `/legal/*` | Privacy, terms and affiliate disclosure |
+| `/legal/*` | Privacy, terms, affiliate disclosure |
 
 ### Publisher demo
 
 | Route | Purpose |
 |---|---|
-| `/admin` | Overview |
+| `/admin` | Dashboard |
 | `/admin/posts` | Manage stories |
-| `/admin/posts/new` | Create story |
+| `/admin/posts/new` | New story |
 | `/admin/posts/:id/edit` | Edit story |
 | `/admin/audience` | Demo subscribers |
-| `/admin/settings` | Publication/demo settings |
+| `/admin/settings` | Settings/demo reset |
 
-These admin routes are UI/demo routes until Phase 1 introduces real authentication and authorization.
+These admin routes are not authenticated until Phase 1.
 
 ---
 
-## ✍️ V2 editor syntax
+## 🛠️ Run locally
 
-The lightweight editor supports reusable blocks:
+Requirements: **Node.js 20+** and npm.
 
-```text
-Normal paragraph
-
-## Heading
-
-> Pull quote
-
-![Alternative text](https://example.com/image.jpg) "Optional caption"
+```bash
+git pull origin main
+npm install
+npm run dev
 ```
 
-Phase 2 will replace/upgrade this with a production structured editor while preserving a clean article data model.
+Production check:
+
+```bash
+npm run typecheck
+npm run build
+npm run preview
+```
+
+If you cloned before the V2.1 recovery, make sure you `git pull origin main` and restart Vite so the new `polish.css` import is loaded.
 
 ---
 
@@ -207,98 +219,43 @@ flowchart TB
   Workers --> DB
   DB --> CMS
   CMS --> AI[AI Provider Adapter]
-  App --> Email[Newsletter/Email Adapter]
-  Public --> Analytics[Analytics]
+  App --> Email[Newsletter Adapter]
 ```
 
-The preferred direction is to evaluate a **Next.js production migration** so public stories have strong server-rendered SEO while preserving the V2 React components/design system. A Vite + NestJS service architecture remains an alternative; Phase 0 must record the final decision before implementation expands.
-
-Deep technical details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+Phase 0 will formally decide between the recommended **Next.js production migration** and a separated **Vite + NestJS** architecture. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ---
 
-## 💰 Revenue model
+## 🤖 Contributor / AI-agent guide
 
-The product is designed to support several channels instead of depending on one:
+Before substantial work, read:
 
-| Channel | Intended use |
-|---|---|
-| 📢 Display advertising | Activated only when content/traffic justify it |
-| 🔗 Affiliate content | Useful tool/product comparisons with disclosure |
-| 🤝 Sponsorships | Sponsored stories, placements and campaigns |
-| 📬 Newsletter sponsorship | Monetize a direct subscriber audience |
-| 📦 Digital products | Later: guides, templates, developer resources |
+1. [`docs/PRD.md`](docs/PRD.md) — what we are building.
+2. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system boundaries and workflows.
+3. [`docs/ROADMAP.md`](docs/ROADMAP.md) — what phase is allowed next.
 
-Monetization must never overwhelm editorial quality. Sponsored and affiliate relationships must be clearly disclosed.
+### Rules
 
----
-
-## 🛠️ Local development
-
-### Requirements
-
-- Node.js 20+ recommended
-- npm
-
-### Start
-
-```bash
-npm install
-npm run dev
-```
-
-### Production build
-
-```bash
-npm run build
-npm run preview
-```
-
-> The V2 source was created before the production backend phase. Phase 0 will add formal environment validation, database setup and CI instructions here once those choices are implemented.
-
----
-
-## 🤖 Contributor & AI-agent guide
-
-Before making a substantial change, read:
-
-1. [`docs/PRD.md`](docs/PRD.md) — **what** the product must do.
-2. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — **how** production responsibilities are separated.
-3. [`docs/ROADMAP.md`](docs/ROADMAP.md) — **what phase is allowed next**.
-
-### Development rules
-
-- ✅ Work phase-by-phase; do not implement future phases accidentally.
-- ✅ Preserve the V2 visual identity and reusable component architecture.
-- ✅ Keep server authorization and publishing rules out of client-only logic.
-- ✅ External stories enter Content Radar; they do not auto-publish.
+- ✅ Work phase-by-phase.
+- ✅ Preserve the reusable screen/component architecture.
+- ✅ Preserve the warm editorial visual identity unless a deliberate redesign is approved.
+- ✅ External stories enter Content Radar; never auto-publish them.
 - ✅ AI output remains editable and human-approved.
-- ✅ Add loading, empty, error and reduced-motion states.
-- ✅ Validate inputs and keep secrets server-side.
-- ❌ Do not commit `.env`, API keys or provider secrets.
-- ❌ Do not introduce a provider response shape directly throughout UI/domain models.
-- ❌ Do not mark a phase complete only because its UI exists.
+- ✅ Add loading, empty, error, mobile and reduced-motion states.
+- ✅ Keep secrets and authorization server-side when backend work begins.
+- ❌ Never commit `.env`, API keys or secrets.
+- ❌ Do not mark a phase done because only its UI exists.
 
-### 📚 Documentation is part of the feature
+### 📚 Documentation is part of every feature
 
-**Every contributor and coding agent must update docs in the same change when behavior changes.**
-
-| Change | Documentation to update |
+| Change | Update |
 |---|---|
-| Setup command / env var / route / workflow | `README.md` |
-| Product scope or user behavior | `docs/PRD.md` |
-| Architecture, provider, data flow or security decision | `docs/ARCHITECTURE.md` |
-| Phase progress/completion | `docs/ROADMAP.md` + README status table |
+| Setup, env var, route, visible workflow | `README.md` |
+| Product scope / behavior | `docs/PRD.md` |
+| Architecture / provider / data flow / security | `docs/ARCHITECTURE.md` |
+| Phase progress | `docs/ROADMAP.md` + README status |
 
-The root README should remain **visual, friendly and quick to navigate**. Put detailed engineering discussion in `docs/` instead of turning the README into a wall of text.
-
----
-
-## ✅ Definition of done
-
-A feature/phase is done only when its behavior works end-to-end, relevant security is enforced, important edge states are handled, verification passes, no secrets are committed, and documentation reflects reality.
-
-For complete phase exit criteria see [`docs/ROADMAP.md`](docs/ROADMAP.md).
+The root README should stay visual and easy to scan. Deep engineering details belong under `docs/`.
 
 ---
 
@@ -308,6 +265,6 @@ For complete phase exit criteria see [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 **Minimal, not empty. Editorial, not generic. Automated where useful, human where it matters.**
 
-`V2 → Production Foundation → CMS → Radar → AI → Distribution → Revenue`
+`V2.1 UI Recovery → Production Foundation → CMS → Radar → AI → Distribution → Revenue`
 
 </div>
