@@ -1,21 +1,43 @@
 # 🏗️ The Living Journal — Architecture
 
-> **Accepted production direction:** Next.js App Router + TypeScript + PostgreSQL/Prisma, with Redis/BullMQ introduced for durable background workflows when required. See [`docs/adr/ADR-001-nextjs-production-architecture.md`](adr/ADR-001-nextjs-production-architecture.md).
+> **Accepted and active application direction:** Next.js App Router + TypeScript, followed by PostgreSQL/Prisma, with Redis/BullMQ introduced for durable background workflows when required. See [`docs/adr/ADR-001-nextjs-production-architecture.md`](adr/ADR-001-nextjs-production-architecture.md).
 
-V2.1 remains the visual/reference frontend baseline while Phase 0 migrates the runtime without redesigning the product.
+The V2.1 visual system remains the UI reference. Phase 0 changes runtime/infrastructure boundaries without redesigning the publication.
 
-## 1. Architecture principles
+## 1. Current implementation checkpoint
+
+The repository has now moved from Vite/React Router to **Next.js App Router**.
+
+Implemented in the active runtime:
+- App Router public/admin route tree;
+- `next/link` / `next/navigation` replacing React Router;
+- root layout and metadata foundation;
+- initial per-story metadata from seed content;
+- explicit client boundaries for browser-dependent interaction;
+- hydration-safe localStorage demo initialization;
+- GSAP/ScrollTrigger retained inside a client component with cleanup;
+- `GET /api/health` runtime health endpoint;
+- Vite entry/config removed.
+
+Not implemented yet:
+- PostgreSQL/Prisma runtime;
+- server-side production content persistence;
+- auth/RBAC;
+- Redis/BullMQ runtime;
+- production provider integrations.
+
+## 2. Architecture principles
 
 - Human-controlled editorial publishing.
-- Clear separation between public reading, editorial CMS, ingestion, AI and monetization.
-- Backend owns authorization, publishing transitions and durable data.
-- Background work is durable/retryable.
-- External providers sit behind adapters so they can be changed.
+- Clear separation between public reading, CMS, ingestion, AI and monetization.
+- Server/application layer owns authorization, publishing transitions and durable data.
+- Background work requiring reliability is durable/retryable.
+- External providers live behind adapters.
 - Public pages prioritize SEO, accessibility and performance.
-- Documentation changes ship with architecture/workflow changes.
-- Next.js is one deployment/application boundary, **not** permission to mix client/server concerns.
+- Documentation changes ship with workflow/architecture changes.
+- One Next.js application boundary does **not** mean client/server concerns may be mixed.
 
-## 2. Target system
+## 3. Target system
 
 ```mermaid
 flowchart LR
@@ -24,14 +46,13 @@ flowchart LR
 
   Web --> Server[Server/Application Layer]
   CMS --> Server
-
   Server --> DB[(PostgreSQL)]
   Server --> Storage[(Object Storage)]
-  Server --> Cache[(Redis)]
+  Server --> Redis[(Redis)]
 
-  RSS[RSS / Approved APIs] --> Ingest[Ingestion Worker]
-  Ingest --> Cache
-  Ingest --> DB
+  RSS[RSS / Approved APIs] --> Worker[Ingestion Worker]
+  Worker --> Redis
+  Worker --> DB
   DB --> Radar[Content Radar]
   Radar --> CMS
 
@@ -40,42 +61,41 @@ flowchart LR
   AI --> DB
 
   Server --> Queue[BullMQ]
-  Queue --> Worker[Background Worker Runtime]
-  Worker --> Email[Email/Newsletter Provider]
-  Worker --> DB
+  Queue --> Jobs[Background Worker Runtime]
+  Jobs --> Email[Email / Newsletter Provider]
+  Jobs --> DB
 
   Web --> Analytics[Analytics]
-  Server --> Analytics
 ```
 
-## 3. Accepted production stack
+## 4. Accepted stack
 
-### Application/runtime
+### Active application runtime
 - **Next.js App Router**
+- React 19
 - TypeScript
-- React
-- Existing CSS token/global/polish layers during migration
-- GSAP + ScrollTrigger only in explicit client components
+- existing `tokens.css` + `global.css` + `polish.css`
+- GSAP + ScrollTrigger for client-only storytelling motion
 
-### Data/application services
+### Next production-data foundation
 - **PostgreSQL** — canonical durable datastore
-- **Prisma** — schema, migrations and typed DB access
-- **Redis** — caching/rate limits/job support when required
-- **BullMQ** — required before durable ingestion, scheduled publishing and campaign workflows
+- **Prisma** — schema/migrations/typed DB access
+
+### Durable workflow foundation
+- **Redis** — cache/rate limits/job infrastructure when needed
+- **BullMQ** — required before durable ingestion, scheduled publishing and campaign jobs
 
 ### Provider boundaries
-- S3-compatible storage / Cloudinary adapter for production media
-- Resend or dedicated newsletter provider behind an email adapter
+- S3-compatible storage / Cloudinary adapter for media
+- email/newsletter provider behind an adapter
 - AI provider behind a server-only adapter with usage logging
-- Analytics provider behind a thin event interface
-- RSS/API source adapters normalized into internal source models
+- analytics behind a thin event interface
+- RSS/API adapters normalize external data into internal models
 
-### Why there is no NestJS service now
-A separate NestJS API was considered but rejected for the initial production architecture. It would add auth/CORS/deployment/DTO complexity while still requiring an SSR strategy for the public publication. Service extraction remains possible later through a new ADR if scale/team boundaries justify it.
+### Why no NestJS service initially
+A separate NestJS API would add deployment, CORS, session/auth and DTO duplication while the publication still needs a server-rendered web runtime. If future scale/team ownership requires services, that must be documented in a new ADR.
 
-## 4. Repository direction
-
-Phase 0 migration target:
+## 5. Active repository shape
 
 ```text
 /
@@ -85,46 +105,73 @@ Phase 0 migration target:
 │   ├── ARCHITECTURE.md
 │   ├── ROADMAP.md
 │   └── PHASE-0-MIGRATION-PLAN.md
-├── prisma/
-│   └── schema.prisma
 ├── public/
 ├── src/
-│   ├── app/                    # Next.js route tree/layouts
-│   ├── components/             # reusable UI
-│   ├── screens/                # retained during migration where useful
-│   ├── features/               # introduced as real domains arrive
-│   ├── server/
-│   │   ├── db/
-│   │   ├── services/
-│   │   ├── auth/               # Phase 1
-│   │   ├── jobs/
-│   │   └── adapters/
+│   ├── app/                    # active Next.js App Router
+│   │   ├── (public)/
+│   │   ├── admin/
+│   │   ├── api/health/
+│   │   ├── layout.tsx
+│   │   └── not-found.tsx
+│   ├── components/
+│   ├── screens/                # V2.1 UI retained/reused
+│   ├── content/
+│   ├── context/                # temporary local demo content state
+│   ├── hooks/
 │   ├── styles/
-│   ├── lib/
-│   └── types/
+│   ├── types/
+│   └── utils/
+├── next.config.ts
+├── tsconfig.json
+├── .env.example
 └── README.md
 ```
 
-Do not move files merely to make the tree look cleaner. Preserve working V2.1 components first; refactor only when a production boundary benefits.
+Later Phase 0/production work may introduce `prisma/`, `src/server/`, `src/features/` or worker modules only when real boundaries need them. Do not reorganize working UI merely for aesthetics.
 
-## 5. Server/client boundary
+## 6. Server/client boundary
 
-Default to server-rendered components/routes for public content and metadata. Use client components only for interactive/browser-dependent behavior such as:
+Prefer server-rendered routes/components for public content and metadata as canonical data moves server-side. Use client components only for behavior that genuinely needs the browser, including:
 
-- GSAP/ScrollTrigger
-- mobile menu state
-- local interactive search/filter behavior where appropriate
-- temporary V2.1 `localStorage` demo flows during migration
-- form interactivity
+- GSAP/ScrollTrigger;
+- mobile menu state;
+- temporary interactive archive/search filtering;
+- temporary V2.1 localStorage demo flows;
+- form interaction/admin demo state.
 
-Rules:
-- Database/provider secrets never enter client modules.
-- `window`, `document`, `matchMedia`, `localStorage` and GSAP browser APIs must not run during server evaluation.
-- Provider/database modules should be explicitly server-only.
+Current migration rules:
+- browser storage is loaded only after mount so the initial server/client render remains deterministic;
+- `window`, `document`, `localStorage`, `matchMedia` and GSAP may not execute in server-evaluated code;
+- database/provider/secrets code will be explicitly server-side;
+- UI-only hiding is never authorization.
 
-## 6. Publishing architecture
+## 7. Routing & metadata
 
-### State machine
+The active App Router maps:
+
+```text
+/
+/stories
+/stories/[slug]
+/category/[slug]
+/search
+/newsletter
+/about
+/contact
+/advertise
+/legal/[page]
+/admin
+/admin/posts
+/admin/posts/new
+/admin/posts/[id]/edit
+/admin/audience
+/admin/settings
+/api/health
+```
+
+Root metadata is provided through `src/app/layout.tsx`. Story routes currently generate seed-backed metadata as a migration scaffold. Production canonical SEO sourced from the database remains Phase 5.
+
+## 8. Publishing architecture
 
 ```mermaid
 stateDiagram-v2
@@ -139,35 +186,31 @@ stateDiagram-v2
   Archived --> Draft: restore
 ```
 
-Server-side service methods own transitions. The UI requests transitions; it does not decide authorization.
+Server-side application services will own transitions. The CMS requests transitions; it does not authorize itself.
 
-### Story write path
+### Planned write path
 
 ```mermaid
 sequenceDiagram
   participant E as Editor
   participant C as CMS
   participant A as Server Application
-  participant D as Database
+  participant D as PostgreSQL
   participant Q as Queue
-
   E->>C: Save draft
   C->>A: validated mutation
   A->>D: post + revision
   D-->>A: saved version
   A-->>C: canonical post
-
-  E->>C: Schedule publication
+  E->>C: Schedule
   C->>A: schedule request
-  A->>D: state=SCHEDULED + publishAt
+  A->>D: SCHEDULED + publishAt
   A->>Q: durable publish job
-  Q-->>A: accepted
-  A-->>C: scheduled
 ```
 
-## 7. Content Radar architecture
+## 9. Content Radar boundary
 
-Every source adapter normalizes to an internal contract rather than leaking provider response shapes into the product:
+Every external provider must normalize into an internal source contract rather than leaking provider response shapes through the product.
 
 ```ts
 interface NormalizedSourceItem {
@@ -187,35 +230,27 @@ interface NormalizedSourceItem {
 
 ```mermaid
 flowchart LR
-  Scheduler --> Adapter
-  Adapter --> Normalize
-  Normalize --> Validate
-  Validate --> Deduplicate
-  Deduplicate --> Persist
-  Persist --> Radar
-  Persist --> Metrics
+  Scheduler --> Adapter --> Normalize --> Validate --> Deduplicate --> Persist --> Radar
 ```
 
-Failed source runs record error metadata and retry according to policy. No source item is public content by itself.
+A source item is a research lead, never public content by itself.
 
-## 8. AI architecture
-
-AI is an explicit editorial service, not an autonomous publisher.
+## 10. AI boundary
 
 ```mermaid
 flowchart LR
   Editor --> Action[Explicit AI action]
   Action --> Context[Approved context]
   Context --> Provider[AI provider]
-  Provider --> Validate[Validate result]
-  Validate --> Generation[(AI Generation Record)]
+  Provider --> Validate
+  Validate --> Generation[(AI Generation)]
   Generation --> Draft[Editable draft]
   Draft --> Review[Human review]
 ```
 
-Store provider/model, action type, timestamps, usage/cost where available and linkage to the relevant post/source item. Provider keys remain server-side.
+AI remains server-mediated and cannot directly publish.
 
-## 9. Authentication & authorization
+## 11. Authentication & authorization — Phase 1
 
 Initial roles:
 
@@ -228,88 +263,51 @@ Initial roles:
 | Manage monetization | ✅ | ❌ |
 | Manage users/settings | ✅ | ❌ |
 
-Authorization is checked on the server for every protected mutation. Hiding a button is not authorization.
+All protected mutation authorization will be server-side.
 
-## 10. Data boundaries
+## 12. Data boundaries
 
-- **Post** — first-party publication content.
-- **SourceItem** — third-party discovery/research metadata.
-- **PostSource** — attribution/research relationship.
-- **AiGeneration** — assistance record, not canonical content.
-- **PostRevision** — editorial history.
-- **Subscriber** — protected audience data.
-- Monetization records should remain separate from article body blocks where practical.
+- **Post** — first-party publication content
+- **SourceItem** — third-party discovery/research metadata
+- **PostSource** — attribution relationship
+- **AiGeneration** — assistance/usage record
+- **PostRevision** — editorial history
+- **Subscriber** — protected audience data
+- monetization records separated from article content where practical
 
-## 11. Media
+## 13. Media
 
-Production uploads use authorized persistent object storage. Store dimensions, MIME type, alt text, attribution and storage key. Never persist temporary browser object URLs as publication assets.
+Production media will use authorized persistent object storage, recording MIME type, dimensions, alt text, attribution and storage key. Browser object URLs are not durable publication assets.
 
-## 12. SEO rendering
+## 14. SEO
 
-Next.js public routes provide the production rendering boundary for:
+Next.js is now the rendering foundation for canonical metadata, article structured data, sitemaps, RSS and redirects. Phase 0 establishes capability; Phase 5 connects those outputs to canonical database content and search-distribution policy.
 
-Per story:
-- canonical URL
-- title/meta description
-- Open Graph/Twitter metadata
-- Article structured data
-- breadcrumbs where appropriate
-- indexability controls
+## 15. Jobs & reliability
 
-Site level:
-- dynamic sitemap
-- RSS
-- robots rules
-- redirects for changed slugs
+Durable jobs are required for source ingestion, scheduled publishing, newsletter sends and other retry-sensitive work. Important jobs need stable IDs/idempotency, attempts/failure records and worker-capable runtime placement.
 
-Dynamic production SEO is implemented in Phase 5; Phase 0 only establishes the runtime needed for it.
+## 16. Security baseline
 
-## 13. Jobs & reliability
+- secrets only in environment/secret manager;
+- server-side input validation;
+- secure sessions when auth arrives;
+- CSRF protection where applicable;
+- rate limiting for sensitive/expensive endpoints;
+- sanitized rich content;
+- upload validation;
+- least-privilege credentials;
+- audit important admin actions;
+- never commit real `.env` secrets.
 
-Use durable jobs for:
-- source ingestion
-- scheduled publishing
-- newsletter sends
-- expensive asynchronous AI work if needed
-- provider/analytics synchronization
+## 17. Observability
 
-Important jobs need idempotency/stable IDs, recorded attempts/failures and admin visibility. Persistent workers must run in a worker-capable runtime rather than being assumed to live indefinitely inside a serverless request.
+Eventually capture application errors, ingestion/job failures, publishing failures, email failures, AI usage/failures and public performance metrics.
 
-## 14. Security baseline
+## 18. Phase 0 source of truth
 
-- Secrets only in environment/secret manager.
-- Server-side schema validation.
-- Secure session cookies when auth arrives.
-- CSRF protection where applicable.
-- Rate limiting for auth/forms/AI.
-- Sanitized rich text.
-- Strict upload validation.
-- Least-privilege provider credentials.
-- Audit important admin actions.
-- Never commit `.env` files.
+Follow [`PHASE-0-MIGRATION-PLAN.md`](PHASE-0-MIGRATION-PLAN.md). The immediate gate is local verification of the Next.js migration/client boundaries, followed by PostgreSQL/Prisma foundation work.
 
-## 15. Observability
+## 19. Documentation rule
 
-At minimum capture:
-- application errors
-- ingestion success/failure/duration
-- queue failures
-- publish failures
-- email failures
-- AI provider failures/usage
-- web vitals/public performance
-
-## 16. Phase 0 implementation source of truth
-
-Follow [`PHASE-0-MIGRATION-PLAN.md`](PHASE-0-MIGRATION-PLAN.md) for migration order and gates.
-
-## 17. Documentation rule
-
-Every material change updates documentation in the same branch/commit when applicable:
-
-- User/setup/workflow → `README.md`
-- Architecture/provider/data/security decision → `ARCHITECTURE.md` and ADR when architectural
-- Product scope → `PRD.md`
-- Phase completion/status → `ROADMAP.md` + README
-
-This applies to human contributors and AI coding agents.
+Update documentation in the same change when setup, routes, workflows, architecture, product scope or phase status change. This applies equally to human contributors and AI coding agents.
