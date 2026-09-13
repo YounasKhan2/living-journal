@@ -5,6 +5,7 @@ import { articleSectionSchema } from './schemas'
 type DbPost = Prisma.PostGetPayload<{
   include: {
     category: true
+    coverMedia: true
     tags: { include: { tag: true } }
   }
 }>
@@ -40,7 +41,10 @@ export function toUiPost(post: DbPost): UiPost {
     category: post.category.name,
     date: formatPublishedDate(post.publishedAt, post.createdAt),
     readTime: post.readTime,
-    image: post.coverImageUrl ?? '',
+    image: post.coverImageUrl ?? post.coverMedia?.url ?? '',
+    imageAlt: post.coverMedia?.altText ?? undefined,
+    imageAttribution: post.coverMedia?.attribution ?? undefined,
+    coverMediaId: post.coverMediaId ?? undefined,
     author: post.authorName,
     featured: post.featured,
     trending: post.trending,
