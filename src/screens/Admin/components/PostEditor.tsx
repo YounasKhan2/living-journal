@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { Archive, ArrowCounterClockwise, Clock, Eye, FloppyDisk, PaperPlaneRight } from 'phosphor-react'
 import type { ArticleSection, Post, PostStatus } from '../../../types/content'
@@ -58,7 +58,8 @@ type PostEditorProps = {
 }
 
 export function PostEditor({ initialPost, onSave, onTransition }: PostEditorProps) {
-  const [draft, setDraft] = useState<Post>(initialPost ?? emptyPost())
+  const initialValue = initialPost ?? emptyPost()
+  const [draft, setDraft] = useState<Post>(initialValue)
   const [body, setBody] = useState(() => sectionsToEditorText(initialPost?.sections ?? [{ type: 'paragraph', text: '' }]))
   const [scheduledAt, setScheduledAt] = useState(initialPost?.scheduledAt?.slice(0, 16) ?? '')
   const [pending, setPending] = useState(false)
@@ -70,15 +71,22 @@ export function PostEditor({ initialPost, onSave, onTransition }: PostEditorProp
   const update = <K extends keyof Post>(key: K, value: Post[K]) => setDraft(current => ({ ...current, [key]: value }))
   const currentPost = useCallback((): Post => ({ ...draft, slug, sections: editorTextToSections(body) }), [body, draft, slug])
   const currentSignature = useMemo(() => JSON.stringify(currentPost()), [currentPost])
-  const initialSignatureRef = useRef(currentSignature)
-  const dirty = currentSignature !== initialSignatureRef.current
+  const [lastSavedSignature, setLastSavedSignature] = useState(() => JSON.stringify({
+    ...initialValue,
+    slug: initialValue.slug || slugify(initialValue.title),
+    sections: initialPost?.sections ?? [{ type: 'paragraph', text: '' }],
+  }))
+  const dirty = currentSignature !== lastSavedSignature
 
   const persist = useCallback(async (mode: 'manual' | 'auto' = 'manual') => {
     if (pending) return
     setError('')
     setPending(true)
     try {
-      await onSave(currentPost())
+      const post = currentPost()
+      const signature = JSON.stringify(post)
+      await onSave(post)
+      setLastSavedSignature(signature)
       if (mode === 'auto') setLastAutoSaveAt(new Date())
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to save the story.')
@@ -113,7 +121,10 @@ export function PostEditor({ initialPost, onSave, onTransition }: PostEditorProp
     setError('')
     setPending(true)
     try {
-      await onSave(currentPost())
+      const post = currentPost()
+      const signature = JSON.stringify(post)
+      await onSave(post)
+      setLastSavedSignature(signature)
       const scheduleValue = status === 'scheduled' && scheduledAt ? new Date(scheduledAt).toISOString() : undefined
       await onTransition(status, scheduleValue)
     } catch (cause) {
