@@ -4,6 +4,7 @@ import '../styles/tokens.css'
 import '../styles/global.css'
 import '../styles/polish.css'
 import '../styles/auth.css'
+import '../styles/cms.css'
 import { ContentProvider } from '../context/ContentContext'
 
 export const metadata: Metadata = {
