@@ -1,0 +1,21 @@
+.post-editor__history{margin-top:20px;max-width:calc(100% - 350px)}
+.revision-panel{margin:0;min-height:0}
+.revision-panel__head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.revision-panel__head span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.16em;color:var(--muted);font-weight:700;margin-bottom:4px}
+.revision-panel__head h2{margin:0;font-family:var(--serif);font-size:28px;font-weight:400}
+.revision-list{display:grid;margin-top:6px}
+.revision-item{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px;padding:14px 0;border-bottom:1px solid var(--line)}
+.revision-item>div{display:grid;gap:3px;min-width:0}
+.revision-item strong{font-size:13px}
+.revision-item span,.revision-item small{font-size:10px;color:var(--muted)}
+.revision-item small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.revision-current{padding:7px 10px;border-radius:999px;background:var(--paper-deep);font-size:8px!important;text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+.revision-restore{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 11px;cursor:pointer;font-size:10px;font-weight:700;color:var(--ink)}
+.revision-restore:hover:not(:disabled){background:var(--ink);color:#fff;border-color:var(--ink)}
+.revision-restore:disabled{opacity:.5;cursor:wait}
+.editor-save-state{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:11px;background:var(--paper-deep);font-size:10px;color:var(--muted);margin-bottom:12px}
+.editor-save-state strong{color:var(--ink);font-size:10px}
+.editor-save-state[data-dirty="true"]{background:#fff4d8;color:#7d6322}
+.editor-save-state[data-dirty="true"] strong{color:#624b11}
+@media(max-width:820px){.post-editor__history{max-width:none}.revision-panel{padding:20px}}
+@media(max-width:520px){.revision-item{grid-template-columns:1fr;gap:8px}.revision-current,.revision-restore{justify-self:start}}
