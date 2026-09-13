@@ -1,2 +1,7 @@
 import { SearchScreen } from '../../../screens/Search/SearchScreen'
-export default function Page(){ return <SearchScreen/> }
+import { loadPublishedUiPosts } from '../../../server/content/public'
+
+export default async function Page() {
+  const posts = await loadPublishedUiPosts()
+  return <SearchScreen posts={posts}/>
+}
