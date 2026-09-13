@@ -1,5 +1,5 @@
 import { Prisma } from '../../generated/prisma/client'
-import type { Post as UiPost, ArticleSection } from '../../types/content'
+import type { Post as UiPost, ArticleSection, PostStatus } from '../../types/content'
 import { articleSectionSchema } from './schemas'
 
 type DbPost = Prisma.PostGetPayload<{
@@ -8,6 +8,14 @@ type DbPost = Prisma.PostGetPayload<{
     tags: { include: { tag: true } }
   }
 }>
+
+const statusMap: Record<'DRAFT' | 'IN_REVIEW' | 'SCHEDULED' | 'PUBLISHED' | 'ARCHIVED', PostStatus> = {
+  DRAFT: 'draft',
+  IN_REVIEW: 'in_review',
+  SCHEDULED: 'scheduled',
+  PUBLISHED: 'published',
+  ARCHIVED: 'archived',
+}
 
 function sectionsFromJson(value: Prisma.JsonValue): ArticleSection[] {
   const parsed = articleSectionSchema.array().safeParse(value)
@@ -36,10 +44,11 @@ export function toUiPost(post: DbPost): UiPost {
     author: post.authorName,
     featured: post.featured,
     trending: post.trending,
-    status: post.status === 'PUBLISHED' ? 'published' : 'draft',
+    status: statusMap[post.status],
     tags: post.tags.map(item => item.tag.name),
     seoTitle: post.seoTitle ?? undefined,
     metaDescription: post.metaDescription ?? undefined,
+    scheduledAt: post.scheduledAt?.toISOString(),
     sections: sectionsFromJson(post.body),
   }
 }
