@@ -42,20 +42,7 @@ export async function readSession() {
   })
 
   if (!session) return null
-
-  const now = new Date()
-  if (session.expiresAt <= now || session.user.status !== 'ACTIVE') {
-    await prisma.session.delete({ where: { id: session.id } }).catch(() => undefined)
-    cookieStore.delete(AUTH_SESSION_COOKIE)
-    return null
-  }
-
-  if (now.getTime() - session.lastSeenAt.getTime() > 5 * 60 * 1000) {
-    await prisma.session.update({
-      where: { id: session.id },
-      data: { lastSeenAt: now },
-    }).catch(() => undefined)
-  }
+  if (session.expiresAt <= new Date() || session.user.status !== 'ACTIVE') return null
 
   return session
 }
