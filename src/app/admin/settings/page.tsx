@@ -1,2 +1,7 @@
 import { AdminSettingsScreen } from '../../../screens/Admin/AdminSettingsScreen'
-export default function Page(){ return <AdminSettingsScreen/> }
+import { requireCapability } from '../../../server/auth/guards'
+
+export default async function Page() {
+  await requireCapability('settings:manage')
+  return <AdminSettingsScreen/>
+}
