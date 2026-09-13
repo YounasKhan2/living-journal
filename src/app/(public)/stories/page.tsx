@@ -1,2 +1,7 @@
 import { StoriesScreen } from '../../../screens/Stories/StoriesScreen'
-export default function Page(){ return <StoriesScreen/> }
+import { loadPublishedUiPosts } from '../../../server/content/public'
+
+export default async function Page() {
+  const posts = await loadPublishedUiPosts()
+  return <StoriesScreen posts={posts}/>
+}
